@@ -192,7 +192,7 @@ export default function LoginPage() {
                           id="fullName"
                           className="mistral-input"
                           type="text"
-                          placeholder="e.g. Ramesh Kumar"
+                          placeholder="e.g. Ananya Roy / Rajesh Verma"
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           autoComplete="name"

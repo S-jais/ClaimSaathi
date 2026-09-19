@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { auth, claims, type Claim, type UserProfile } from "@/lib/api";
 import { MistralNavbar } from "@/components/MistralNavbar";
 import {
@@ -18,6 +18,15 @@ export default function DashboardPage() {
   const [claimList, setClaimList] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // New Claim Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [hospitalName, setHospitalName] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+  const [claimAmount, setClaimAmount] = useState("");
+  const [claimType, setClaimType] = useState("reimbursement");
+  const [admissionDate, setAdmissionDate] = useState("");
+  const [submittingClaim, setSubmittingClaim] = useState(false);
 
   useEffect(() => {
     if (!auth.isLoggedIn()) {
@@ -38,6 +47,43 @@ export default function DashboardPage() {
     router.push("/");
   }
 
+  async function handleCreateClaim(e: FormEvent) {
+    e.preventDefault();
+    if (!hospitalName || !claimAmount) return;
+
+    setSubmittingClaim(true);
+    try {
+      const newClaim = await claims.create({
+        claim_type: claimType,
+        hospital_name: hospitalName,
+        claim_amount: Number(claimAmount) || 0,
+        admission_date: admissionDate || new Date().toISOString().split("T")[0],
+        diagnosis: diagnosis || "General Treatment",
+      });
+
+      setClaimList((prev) => [newClaim, ...prev]);
+      setShowAddModal(false);
+      setHospitalName("");
+      setDiagnosis("");
+      setClaimAmount("");
+      setAdmissionDate("");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to register claim");
+    } finally {
+      setSubmittingClaim(false);
+    }
+  }
+
+  async function handleLoadSample() {
+    if (!user) return;
+    try {
+      const sample = await claims.loadSampleClaim(user.id, user.full_name || undefined);
+      setClaimList((prev) => [sample, ...prev]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load sample claim");
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-brand-primary)" }}>
@@ -51,12 +97,13 @@ export default function DashboardPage() {
     );
   }
 
-  const primaryClaim = claimList[0] || { id: "CLM-20491" };
+  const primaryClaim = claimList[0] || null;
+  const totalAmount = claimList.reduce((acc, c) => acc + Number(c.claim_amount || 0), 0);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* Mistral Navigation Bar */}
-      <MistralNavbar user={user} onLogout={handleLogout} claimId={primaryClaim.id} />
+      {/* Navigation Bar */}
+      <MistralNavbar user={user} onLogout={handleLogout} claimId={primaryClaim?.id || "CLM-NEW"} />
 
       <main className="mistral-main" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <div className="max-w-mistral border-grid-x" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -68,9 +115,13 @@ export default function DashboardPage() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
                   <span className="text-eyebrow">{t("dashboard.workspace", "WORKSPACE / CLAIMS PORTFOLIO")}</span>
-                  {user?.is_demo && (
+                  {user?.is_demo ? (
                     <span className="mistral-badge badge-demo" style={{ padding: "1px 6px" }}>
                       {t("dashboard.demoAccount", "DEMO ACCOUNT")}
+                    </span>
+                  ) : (
+                    <span className="mistral-badge badge-ready" style={{ padding: "1px 6px" }}>
+                      ACTIVE ACCOUNT
                     </span>
                   )}
                 </div>
@@ -84,19 +135,31 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-                <Link
-                  href={`/claims/${primaryClaim.id}/readiness`}
-                  className="btn-mistral-outline"
-                >
-                  {t("dashboard.verifyReadiness", "Verify Readiness")}
-                </Link>
-                <Link
-                  href={`/claims/${primaryClaim.id}/rejection`}
-                  className="btn-mistral-solid"
-                >
-                  {t("dashboard.decodeRejection", "Decode Rejection")} <PixelArrowRight size={16} />
-                </Link>
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+                {primaryClaim ? (
+                  <>
+                    <Link
+                      href={`/claims/${primaryClaim.id}/readiness`}
+                      className="btn-mistral-outline"
+                    >
+                      {t("dashboard.verifyReadiness", "Verify Readiness")}
+                    </Link>
+                    <Link
+                      href={`/claims/${primaryClaim.id}/rejection`}
+                      className="btn-mistral-solid"
+                    >
+                      {t("dashboard.decodeRejection", "Decode Rejection")} <PixelArrowRight size={16} />
+                    </Link>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(true)}
+                    className="btn-mistral-solid"
+                  >
+                    + Register New Claim <PixelArrowRight size={16} />
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -116,26 +179,28 @@ export default function DashboardPage() {
                   {claimList.length}
                 </span>
                 <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                  (₹{claimList.reduce((acc, c) => acc + Number(c.claim_amount || 0), 0).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN")})
+                  (₹{totalAmount.toLocaleString(lang === "hi" ? "hi-IN" : "en-IN")})
                 </span>
               </div>
               <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "0.25rem" }}>
-                {t("dashboard.starHealth", "Star Health MediClassic Individual")}
+                {claimList.length > 0
+                  ? (claimList[0].hospital_name || "Health Insurance Portfolio")
+                  : "No claims filed yet"}
               </p>
             </div>
 
             <div className="mistral-cell">
               <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("dashboard.readinessScore", "Readiness Score")}</p>
               <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                <span className="font-mistral" style={{ fontSize: "2rem", fontWeight: 700, color: "var(--mistral-flame)" }}>
-                  85%
+                <span className="font-mistral" style={{ fontSize: "2rem", fontWeight: 700, color: claimList.length > 0 ? "var(--mistral-flame)" : "var(--mistral-emerald)" }}>
+                  {claimList.length > 0 ? `${claimList[0].readiness_score || 85}%` : "100%"}
                 </span>
-                <span className="mistral-badge badge-warning" style={{ fontSize: "0.65rem" }}>
-                  {t("dashboard.documentGap", "1 Document Gap")}
+                <span className={`mistral-badge ${claimList.length > 0 ? "badge-warning" : "badge-ready"}`} style={{ fontSize: "0.65rem" }}>
+                  {claimList.length > 0 ? t("dashboard.documentGap", "1 Document Gap") : "Ready for Upload"}
                 </span>
               </div>
               <div className="mistral-progress-track" style={{ marginTop: "0.5rem" }}>
-                <div className="mistral-progress-fill" style={{ width: "85%" }} />
+                <div className="mistral-progress-fill" style={{ width: claimList.length > 0 ? `${claimList[0].readiness_score || 85}%` : "100%" }} />
               </div>
             </div>
 
@@ -143,7 +208,9 @@ export default function DashboardPage() {
               <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("dashboard.statutoryProtection", "Statutory Protection")}</p>
               <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
                 <span className="font-mistral" style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--mistral-emerald)" }}>
-                  {t("dashboard.monthsDuration", "78 Months").replace("{months}", "78")}
+                  {claimList.length > 0 && user?.is_demo
+                    ? t("dashboard.monthsDuration", "78 Months").replace("{months}", "78")
+                    : "60-Month Cap"}
                 </span>
                 <span className="mistral-badge badge-ready" style={{ fontSize: "0.65rem" }}>
                   {t("dashboard.moratoriumActive", "Moratorium Active")}
@@ -156,91 +223,133 @@ export default function DashboardPage() {
           </div>
 
           {/* Claims List Header */}
-          <div className="mistral-cell-header">
-            <span className="text-eyebrow">{t("dashboard.portfolioRecords", "Claim Portfolio Records")}</span>
-            <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
-              {t("dashboard.showingCount", "Showing 1 of 1").replace("{count}", String(claimList.length)).replace("{total}", String(claimList.length))}
-            </span>
+          <div className="mistral-cell-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <span className="text-eyebrow">{t("dashboard.portfolioRecords", "Claim Portfolio Records")}</span>
+              <span className="text-eyebrow" style={{ color: "var(--text-tertiary)", marginLeft: "0.75rem" }}>
+                {t("dashboard.showingCount", "Showing {count} of {total}").replace("{count}", String(claimList.length)).replace("{total}", String(claimList.length))}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="btn-mistral-outline"
+              style={{ fontSize: "0.75rem", padding: "0.3rem 0.75rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+            >
+              <span>+ Register Claim</span>
+            </button>
           </div>
 
-          {/* Claim Rows */}
+          {/* Claim Rows or Empty State */}
           <div className="divide-grid-y">
-            {claimList.map((claim) => {
-              const hospitalDisplay = lang === "hi"
-                ? (claim.hospital_name || "")
-                    .replace("Apollo Hospital, Bengaluru", "अपोलो अस्पताल, बेंगलुरु")
-                    .replace("Manipal Hospital, Indiranagar", "मणिपाल अस्पताल, इंदिरानगर")
-                : claim.hospital_name;
-
-              const procedureDisplay = lang === "hi"
-                ? "टोटल नी रिप्लेसमेंट (बायां)"
-                : "Total Knee Arthroplasty (Left)";
-
-              return (
-                <div
-                  key={claim.id}
-                  className="mistral-list-row"
-                  id={`claim-${claim.id}`}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                      <span className="font-mistral" style={{ fontSize: "1.15rem", fontWeight: 700 }}>
-                        {claim.claim_reference}
-                      </span>
-                      <span className="mistral-badge badge-danger">
-                        <PixelAlert size={12} /> {t("dashboard.repudiatedBadge", "Repudiated (Clause 4.2)")}
-                      </span>
-                      <span className="mistral-badge badge-demo">
-                        {t("dashboard.coverageBadge", "78-Mo Coverage")}
-                      </span>
-                    </div>
-
-                    <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
-                      {hospitalDisplay} · {procedureDisplay} · {t("dashboard.admission", "Admission")}: {claim.admission_date}
-                    </p>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "0.25rem" }}>
-                      <span className="text-eyebrow" style={{ color: "var(--text-primary)" }}>
-                        {t("dashboard.amount", "Amount")}: ₹{Number(claim.claim_amount || 0).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN")}
-                      </span>
-                      <span style={{ color: "var(--border-secondary)" }}>•</span>
-                      <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
-                        {t("dashboard.readiness", "Readiness")}: {claim.readiness_score}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                      <Link
-                        href={`/claims/${claim.id}/readiness`}
-                        className="btn-mistral-outline"
-                        style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem" }}
-                      >
-                        {t("dashboard.readinessBtn", "Readiness")}
-                      </Link>
-                      <Link
-                        href={`/claims/${claim.id}/rejection`}
-                        className="btn-mistral-solid"
-                        style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem" }}
-                      >
-                        {t("dashboard.rejectionDecoderBtn", "Rejection Decoder")}
-                      </Link>
-                      <Link
-                        href={`/claims/${claim.id}/appeal`}
-                        className="btn-mistral-outline"
-                        style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem" }}
-                      >
-                        {t("dashboard.appealDraftBtn", "Appeal Draft")}
-                      </Link>
-                    </div>
-                    <span className="arrow-indicator" style={{ display: "inline-flex", color: "var(--text-tertiary)" }}>
-                      <PixelArrowRight size={18} />
-                    </span>
+            {claimList.length === 0 ? (
+              <div style={{ padding: "4rem 2rem", textAlign: "center", backgroundColor: "var(--surface-brand-secondary)" }}>
+                <div style={{ maxWidth: "560px", margin: "0 auto" }}>
+                  <p className="text-eyebrow" style={{ color: "var(--mistral-flame)", marginBottom: "0.5rem" }}>
+                    YOUR CLAIM WORKSPACE IS ACTIVE
+                  </p>
+                  <h3 className="text-h3" style={{ marginBottom: "0.75rem" }}>
+                    No Claims Registered Yet
+                  </h3>
+                  <p style={{ color: "var(--text-secondary)", fontSize: "0.925rem", lineHeight: 1.6, marginBottom: "1.75rem" }}>
+                    Welcome to your personal ClaimSaathi workspace, {user?.full_name?.split(" ")[0] || "Policyholder"}. Register an active or repudiated health insurance claim to check mandatory hospital documents, decode rejection clauses against IRDAI regulations, and build legally grounded grievance letters.
+                  </p>
+                  <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(true)}
+                      className="btn-mistral-solid"
+                    >
+                      + Register New Claim <PixelArrowRight size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadSample}
+                      className="btn-mistral-outline"
+                    >
+                      ⚡ Load Sample Case to Explore
+                    </button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              claimList.map((claim) => {
+                const hospitalDisplay = lang === "hi"
+                  ? (claim.hospital_name || "")
+                      .replace("Apollo Hospital, Bengaluru", "अपोलो अस्पताल, बेंगलुरु")
+                      .replace("Manipal Hospital, Indiranagar", "मणिपाल अस्पताल, इंदिरानगर")
+                  : claim.hospital_name;
+
+                const procedureDisplay = lang === "hi"
+                  ? "टोटल नी रिप्लेसमेंट (बायां)"
+                  : "Total Knee Arthroplasty (Left)";
+
+                return (
+                  <div
+                    key={claim.id}
+                    className="mistral-list-row"
+                    id={`claim-${claim.id}`}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                        <span className="font-mistral" style={{ fontSize: "1.15rem", fontWeight: 700 }}>
+                          {claim.claim_reference}
+                        </span>
+                        <span className="mistral-badge badge-danger">
+                          <PixelAlert size={12} /> {t("dashboard.repudiatedBadge", "Repudiated (Clause 4.2)")}
+                        </span>
+                        <span className="mistral-badge badge-demo">
+                          {t("dashboard.coverageBadge", "78-Mo Coverage")}
+                        </span>
+                      </div>
+
+                      <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
+                        {hospitalDisplay} · {procedureDisplay} · {t("dashboard.admission", "Admission")}: {claim.admission_date}
+                      </p>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "0.25rem" }}>
+                        <span className="text-eyebrow" style={{ color: "var(--text-primary)" }}>
+                          {t("dashboard.amount", "Amount")}: ₹{Number(claim.claim_amount || 0).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN")}
+                        </span>
+                        <span style={{ color: "var(--border-secondary)" }}>•</span>
+                        <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
+                          {t("dashboard.readiness", "Readiness")}: {claim.readiness_score || 85}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        <Link
+                          href={`/claims/${claim.id}/readiness`}
+                          className="btn-mistral-outline"
+                          style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem" }}
+                        >
+                          {t("dashboard.readinessBtn", "Readiness")}
+                        </Link>
+                        <Link
+                          href={`/claims/${claim.id}/rejection`}
+                          className="btn-mistral-solid"
+                          style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem" }}
+                        >
+                          {t("dashboard.rejectionDecoderBtn", "Rejection Decoder")}
+                        </Link>
+                        <Link
+                          href={`/claims/${claim.id}/appeal`}
+                          className="btn-mistral-outline"
+                          style={{ fontSize: "0.8rem", padding: "0.45rem 0.85rem" }}
+                        >
+                          {t("dashboard.appealDraftBtn", "Appeal Draft")}
+                        </Link>
+                      </div>
+                      <span className="arrow-indicator" style={{ display: "inline-flex", color: "var(--text-tertiary)" }}>
+                        <PixelArrowRight size={18} />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* Quick Action Matrix */}
@@ -248,7 +357,13 @@ export default function DashboardPage() {
             <p className="text-eyebrow" style={{ marginBottom: "1rem" }}>{t("dashboard.actionWorkflows", "Action Workflows")}</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
               <Link
-                href={`/claims/${primaryClaim.id}/readiness`}
+                href={primaryClaim ? `/claims/${primaryClaim.id}/readiness` : "#"}
+                onClick={(e) => {
+                  if (!primaryClaim) {
+                    e.preventDefault();
+                    setShowAddModal(true);
+                  }
+                }}
                 className="mistral-card mistral-card-interactive"
                 style={{ padding: "1.5rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
               >
@@ -266,7 +381,13 @@ export default function DashboardPage() {
               </Link>
 
               <Link
-                href={`/claims/${primaryClaim.id}/rejection`}
+                href={primaryClaim ? `/claims/${primaryClaim.id}/rejection` : "#"}
+                onClick={(e) => {
+                  if (!primaryClaim) {
+                    e.preventDefault();
+                    setShowAddModal(true);
+                  }
+                }}
                 className="mistral-card mistral-card-interactive"
                 style={{ padding: "1.5rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
               >
@@ -284,7 +405,13 @@ export default function DashboardPage() {
               </Link>
 
               <Link
-                href={`/claims/${primaryClaim.id}/appeal`}
+                href={primaryClaim ? `/claims/${primaryClaim.id}/appeal` : "#"}
+                onClick={(e) => {
+                  if (!primaryClaim) {
+                    e.preventDefault();
+                    setShowAddModal(true);
+                  }
+                }}
                 className="mistral-card mistral-card-interactive"
                 style={{ padding: "1.5rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
               >
@@ -329,6 +456,147 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Modal: Register New Claim */}
+      {showAddModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "1rem",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddModal(false);
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--surface-brand-primary)",
+              border: "1px solid var(--border-primary)",
+              width: "100%",
+              maxWidth: "520px",
+              padding: "2rem",
+              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+              <div>
+                <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>NEW CLAIM REGISTRATION</span>
+                <h3 className="text-h3" style={{ marginTop: "0.25rem" }}>Register Health Claim</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "1.5rem",
+                  cursor: "pointer",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateClaim} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <div>
+                <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
+                  Hospital Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Max Super Speciality, Delhi / Fortis Hospital"
+                  value={hospitalName}
+                  onChange={(e) => setHospitalName(e.target.value)}
+                  className="mistral-input"
+                />
+              </div>
+
+              <div>
+                <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
+                  Procedure / Treatment
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Total Knee Arthroplasty / Cardiac Stent Placement"
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                  className="mistral-input"
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div>
+                  <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
+                    Claim Amount (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="e.g. 150000"
+                    value={claimAmount}
+                    onChange={(e) => setClaimAmount(e.target.value)}
+                    className="mistral-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
+                    Claim Type
+                  </label>
+                  <select
+                    value={claimType}
+                    onChange={(e) => setClaimType(e.target.value)}
+                    className="mistral-input"
+                    style={{ height: "42px" }}
+                  >
+                    <option value="reimbursement">Reimbursement</option>
+                    <option value="cashless_denial">Cashless Denial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
+                  Admission Date
+                </label>
+                <input
+                  type="date"
+                  value={admissionDate}
+                  onChange={(e) => setAdmissionDate(e.target.value)}
+                  className="mistral-input"
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="btn-mistral-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingClaim}
+                  className="btn-mistral-solid"
+                >
+                  {submittingClaim ? "Registering..." : "Submit Claim"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
