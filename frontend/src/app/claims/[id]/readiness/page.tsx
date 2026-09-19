@@ -11,41 +11,17 @@ import {
   PixelCheck,
   PixelAlert,
 } from "@/components/PixelIcons";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ClaimReadinessPage() {
   const params = useParams();
   const claimId = (params?.id as string) || "CLM-20491";
 
+  const { t, lang } = useLanguage();
   const [result, setResult] = useState<ReadinessResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lang, setLang] = useState<"en" | "hi">("en");
-
-  const t =
-    lang === "hi"
-      ? {
-        title: "दावा तैयारी सत्यापन",
-        subtitle: "दस्तावेज़ ऑडिट एवं विनियामक आवश्यकता परीक्षण",
-        satisfied: "सत्यापित",
-        missing: "कार्रवाई आवश्यक",
-        score: "तैयारी स्कोर",
-        refresh: "पुनः जांचें",
-        decodeCta: "अस्वीकृति पत्र समझें",
-        disclaimer:
-          "सांविधिक अस्वीकरण: तैयारी मूल्यांकन IRDAI 2024 दावा प्रस्तुति नियमों पर आधारित है। अंतिम निर्णय केवल बीमाकर्ता का होगा।",
-      }
-      : {
-        title: "Claim Readiness Verification",
-        subtitle: "Deterministic document audit & regulatory requirement check",
-        satisfied: "SATISFIED",
-        missing: "ACTION REQUIRED",
-        score: "Readiness Score",
-        refresh: "Re-Audit",
-        decodeCta: "Decode Rejection Notice",
-        disclaimer:
-          "Statutory Disclaimer: Readiness evaluation is based on standard IRDAI 2024 claims submission rules. Final adjudication remains solely with the insurer.",
-      };
 
   async function fetchReadiness() {
     setError(null);
@@ -93,6 +69,33 @@ export default function ClaimReadinessPage() {
     );
   }
 
+  const docTranslations: Record<string, { label: string; gap?: string }> = {
+    "discharge_summary": {
+      label: "डिस्चार्ज सारांश",
+      gap: "अस्पताल द्वारा जारी मूल डिस्चार्ज सारांश अनिवार्य है।",
+    },
+    "hospital_bill": {
+      label: "अंतिम अस्पताल बिल",
+      gap: "विस्तृत मद-वार अस्पताल बिल संलग्न किया जाना आवश्यक है।",
+    },
+    "payment_receipts": {
+      label: "भुगतान रसीदें",
+      gap: "अस्पताल द्वारा जारी हस्ताक्षरित भुगतान रसीद अनिवार्य है।",
+    },
+    "prescriptions": {
+      label: "पर्चे एवं फार्मेसी बिल",
+      gap: "चिकित्सक के पर्चे और संगत दवा बिल आवश्यक हैं।",
+    },
+    "diagnostic_reports": {
+      label: "जाँच एवं लैब रिपोर्ट्स",
+      gap: "इलाज का समर्थन करने वाली लैब व रेडियोलॉजी रिपोर्ट्स आवश्यक हैं।",
+    },
+    "indoor_case_papers": {
+      label: "इंडोर केस पेपर्स (ICP) / ओटी नोट्स",
+      gap: "बीमाकर्ता ने ओटी नोट्स और दैनिक डॉक्टर नोट्स की मांग की है। अस्पताल के मेडिकल रिकॉर्ड विभाग (MRD) से प्राप्त करें।",
+    },
+  };
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <MistralNavbar claimId={claimId} />
@@ -110,54 +113,30 @@ export default function ClaimReadinessPage() {
                     href="/dashboard"
                     style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 600 }}
                   >
-                    <PixelArrowLeft size={14} /> Back to Dashboard
+                    <PixelArrowLeft size={14} /> {lang === "hi" ? "डैशबोर्ड पर वापस जाएं" : "Back to Dashboard"}
                   </Link>
                   <span style={{ color: "var(--border-secondary)" }}>/</span>
-                  <span className="text-eyebrow">Claim {claimId}</span>
+                  <span className="text-eyebrow">{lang === "hi" ? "क्लेम" : "Claim"} {claimId}</span>
                   <span className="mistral-badge badge-demo">Star Health</span>
                 </div>
 
-                <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>{t.title}</h1>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>{t.subtitle}</p>
+                <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>
+                  {t("readiness.title", "Claim Readiness Verification")}
+                </h1>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+                  {t("readiness.subtitle", "Deterministic document audit & regulatory requirement check")}
+                </p>
               </div>
 
-              {/* Language Switcher & Re-check Button */}
+              {/* Re-check Button */}
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <div style={{ display: "flex", border: "1px solid var(--border-primary)", borderRadius: "3px", overflow: "hidden" }}>
-                  <button
-                    onClick={() => setLang("en")}
-                    style={{
-                      padding: "0.35rem 0.75rem",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      backgroundColor: lang === "en" ? "var(--surface-brand-secondary)" : "transparent",
-                      color: lang === "en" ? "var(--text-primary)" : "var(--text-tertiary)",
-                    }}
-                  >
-                    EN
-                  </button>
-                  <button
-                    onClick={() => setLang("hi")}
-                    style={{
-                      padding: "0.35rem 0.75rem",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      borderLeft: "1px solid var(--border-primary)",
-                      backgroundColor: lang === "hi" ? "var(--surface-brand-secondary)" : "transparent",
-                      color: lang === "hi" ? "var(--text-primary)" : "var(--text-tertiary)",
-                    }}
-                  >
-                    हिन्दी
-                  </button>
-                </div>
-
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
                   className="btn-mistral-outline"
                   id="readiness-refresh-btn"
                 >
-                  {refreshing ? "Auditing..." : t.refresh}
+                  {refreshing ? t("readiness.refreshing", "Auditing...") : t("readiness.refresh", "Re-Audit")}
                 </button>
               </div>
             </div>
@@ -173,13 +152,15 @@ export default function ClaimReadinessPage() {
           {result && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", borderBottom: "1px solid var(--border-primary)" }} className="divide-grid-x">
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>{t.score}</p>
+                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>{t("readiness.scoreLabel", "Readiness Score")}</p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
                   <span className="font-mistral" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--mistral-flame)" }}>
                     {result.score}%
                   </span>
                   <span className={`mistral-badge ${result.is_ready ? "badge-ready" : "badge-warning"}`}>
-                    {result.is_ready ? "Ready to Submit" : "1 Critical Gap"}
+                    {result.is_ready 
+                      ? (lang === "hi" ? "जमा करने हेतु तैयार" : "Ready to Submit")
+                      : (lang === "hi" ? "1 महत्वपूर्ण कमी" : "1 Critical Gap")}
                   </span>
                 </div>
                 <div className="mistral-progress-track" style={{ marginTop: "0.75rem" }}>
@@ -188,27 +169,33 @@ export default function ClaimReadinessPage() {
               </div>
 
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>Document Requirements</p>
+                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>
+                  {lang === "hi" ? "दस्तावेज़ आवश्यकताएं" : "Document Requirements"}
+                </p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
                   <span className="font-mistral" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--text-primary)" }}>
                     5 / 6
                   </span>
                   <span className="text-eyebrow" style={{ color: "var(--text-secondary)" }}>
-                    Verified Admissible
+                    {lang === "hi" ? "स्वीकार्य सत्यापित" : "Verified Admissible"}
                   </span>
                 </div>
                 <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "0.5rem" }}>
-                  Indoor Case Papers (ICPs) requested by TPA
+                  {lang === "hi" ? "टीपीए द्वारा इंडोर केस पेपर्स (ICP) की मांग" : "Indoor Case Papers (ICPs) requested by TPA"}
                 </p>
               </div>
 
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>Next Remediation Step</p>
+                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>
+                  {lang === "hi" ? "अगला सुधारात्मक कदम" : "Next Remediation Step"}
+                </p>
                 <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
-                  Decode Rejection Notice
+                  {lang === "hi" ? "अस्वीकृति नोटिस समझें" : "Decode Rejection Notice"}
                 </p>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                  Insurer invoked Clause 4.2 in error despite 78 months continuous coverage.
+                  {lang === "hi" 
+                    ? "78 महीनों की निरंतर कवरेज के बावजूद बीमाकर्ता ने त्रुटिवश क्लॉज 4.2 लागू किया।"
+                    : "Insurer invoked Clause 4.2 in error despite 78 months continuous coverage."}
                 </p>
               </div>
             </div>
@@ -216,74 +203,92 @@ export default function ClaimReadinessPage() {
 
           {/* Requirements Checklist Header */}
           <div className="mistral-cell-header">
-            <span className="text-eyebrow">Deterministic Checklist · 6 Admissibility Gates</span>
-            <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>Python Rules Engine</span>
+            <span className="text-eyebrow">
+              {lang === "hi" ? "वस्तुनिष्ठ चेकलिस्ट · 6 स्वीकार्यता मानक" : "Deterministic Checklist · 6 Admissibility Gates"}
+            </span>
+            <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
+              {lang === "hi" ? "पायथन नियम इंजन" : "Python Rules Engine"}
+            </span>
           </div>
 
           {/* Checklist Items */}
           {result && (
             <div className="divide-grid-y">
-              {result.requirements.map((req) => (
-                <div
-                  key={req.requirement_type}
-                  className="mistral-cell"
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: "1.5rem",
-                    backgroundColor: req.is_satisfied ? "var(--surface-brand-primary)" : "var(--surface-brand-secondary)",
-                  }}
-                  id={`req-${req.requirement_type}`}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "3px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: req.is_satisfied ? "var(--status-ready-bg)" : "var(--status-warn-bg)",
-                        color: req.is_satisfied ? "var(--status-ready-text)" : "var(--status-warn-text)",
-                        flexShrink: 0,
-                        border: `1px solid ${req.is_satisfied ? "var(--status-ready-border)" : "var(--status-warn-border)"}`,
-                      }}
-                    >
-                      {req.is_satisfied ? <PixelCheck size={16} /> : <PixelAlert size={16} />}
-                    </div>
+              {result.requirements.map((req) => {
+                const label = (lang === "hi" && docTranslations[req.requirement_type]?.label)
+                  ? docTranslations[req.requirement_type].label
+                  : req.label;
 
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
-                        <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{req.label}</span>
-                        {req.is_mandatory && (
-                          <span className="mistral-badge" style={{ fontSize: "0.65rem", padding: "1px 5px" }}>
-                            MANDATORY
-                          </span>
-                        )}
+                const gap = (lang === "hi" && docTranslations[req.requirement_type]?.gap)
+                  ? docTranslations[req.requirement_type].gap
+                  : req.gap_reason;
+
+                return (
+                  <div
+                    key={req.requirement_type}
+                    className="mistral-cell"
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: "1.5rem",
+                      backgroundColor: req.is_satisfied ? "var(--surface-brand-primary)" : "var(--surface-brand-secondary)",
+                    }}
+                    id={`req-${req.requirement_type}`}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "3px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: req.is_satisfied ? "var(--status-ready-bg)" : "var(--status-warn-bg)",
+                          color: req.is_satisfied ? "var(--status-ready-text)" : "var(--status-warn-text)",
+                          flexShrink: 0,
+                          border: `1px solid ${req.is_satisfied ? "var(--status-ready-border)" : "var(--status-warn-border)"}`,
+                        }}
+                      >
+                        {req.is_satisfied ? <PixelCheck size={16} /> : <PixelAlert size={16} />}
                       </div>
 
-                      {req.gap_reason ? (
-                        <p style={{ fontSize: "0.85rem", color: "var(--status-danger-text)", lineHeight: 1.5, marginTop: "0.25rem" }}>
-                          ⚠ {req.gap_reason}
-                        </p>
-                      ) : (
-                        <p style={{ fontSize: "0.8rem", color: "var(--text-tertiary)" }}>
-                          Document verified: {req.satisfied_by_document_id} · Tamper-evident hash logged
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                          <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{label}</span>
+                          {req.is_mandatory && (
+                            <span className="mistral-badge" style={{ fontSize: "0.65rem", padding: "1px 5px" }}>
+                              {lang === "hi" ? "अनिवार्य" : "MANDATORY"}
+                            </span>
+                          )}
+                        </div>
 
-                  <span
-                    className={`mistral-badge ${req.is_satisfied ? "badge-ready" : "badge-warning"}`}
-                    style={{ flexShrink: 0 }}
-                  >
-                    {req.is_satisfied ? t.satisfied : t.missing}
-                  </span>
-                </div>
-              ))}
+                        {gap ? (
+                          <p style={{ fontSize: "0.85rem", color: "var(--status-danger-text)", lineHeight: 1.5, marginTop: "0.25rem" }}>
+                            ⚠ {gap}
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: "0.8rem", color: "var(--text-tertiary)" }}>
+                            {lang === "hi" 
+                              ? `दस्तावेज़ सत्यापित: ${req.satisfied_by_document_id} · सुरक्षित हैश दर्ज` 
+                              : `Document verified: ${req.satisfied_by_document_id} · Tamper-evident hash logged`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <span
+                      className={`mistral-badge ${req.is_satisfied ? "badge-ready" : "badge-warning"}`}
+                      style={{ flexShrink: 0 }}
+                    >
+                      {req.is_satisfied 
+                        ? (lang === "hi" ? "पूर्ण" : "SATISFIED") 
+                        : (lang === "hi" ? "कार्रवाई आवश्यक" : "ACTION REQUIRED")}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -291,7 +296,7 @@ export default function ClaimReadinessPage() {
           {result && result.flags.length > 0 && (
             <div className="border-t-grid" style={{ padding: "1.5rem 2rem", backgroundColor: "var(--surface-brand-secondary)" }}>
               <p className="text-eyebrow" style={{ color: "var(--mistral-flame)", marginBottom: "0.75rem" }}>
-                Regulatory Alerts & Observations
+                {lang === "hi" ? "विनियामक चेतावनियां एवं टिप्पणियां" : "Regulatory Alerts & Observations"}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {result.flags.map((flag, idx) => (
@@ -307,13 +312,13 @@ export default function ClaimReadinessPage() {
           {/* Statutory Disclaimer Banner */}
           <div className="border-t-grid mistral-banner-notice">
             <PixelAlert size={16} />
-            <p>{t.disclaimer}</p>
+            <p>{t("readiness.disclaimer", "Statutory Disclaimer: Readiness evaluation is based on standard IRDAI 2024 claims submission rules. Final adjudication remains solely with the insurer.")}</p>
           </div>
 
           {/* Action Footer */}
           <div className="border-t-grid" style={{ padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             <Link href="/dashboard" className="btn-mistral-outline">
-              <PixelArrowLeft size={16} /> Dashboard
+              <PixelArrowLeft size={16} /> {lang === "hi" ? "डैशबोर्ड" : "Dashboard"}
             </Link>
 
             <Link
@@ -324,7 +329,7 @@ export default function ClaimReadinessPage() {
               <span className="cta-arrow-left">
                 <PixelArrowRight size={18} />
               </span>
-              <span className="cta-label">{t.decodeCta}</span>
+              <span className="cta-label">{t("readiness.decodeCta", "Decode Rejection Notice")}</span>
               <span className="cta-arrow-right">
                 <PixelArrowRight size={18} />
               </span>

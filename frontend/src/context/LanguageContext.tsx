@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useSyncExternalStore } from "react";
 import enDictionary from "../locales/en.json";
 import hiDictionary from "../locales/hi.json";
 import { INSURANCE_GLOSSARY, GlossaryTerm } from "../locales/glossary";
@@ -21,30 +21,36 @@ const dictionaries: Record<SupportedLanguage, Record<string, unknown>> = {
   hi: hiDictionary as unknown as Record<string, unknown>,
 };
 
+function getLangSnapshot(): SupportedLanguage {
+  if (typeof window === "undefined") return "en";
+  const saved = localStorage.getItem("claimsaathi_lang");
+  return saved === "hi" ? "hi" : "en";
+}
+
+function getLangServerSnapshot(): SupportedLanguage {
+  return "en";
+}
+
+function subscribeLang(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener("claimsaathi_lang_change", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("claimsaathi_lang_change", callback);
+  };
+}
+
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<SupportedLanguage>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("claimsaathi_lang") as SupportedLanguage | null;
-      if (saved === "en" || saved === "hi") {
-        return saved;
-      }
-    }
-    return "en";
-  });
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      document.documentElement.lang = lang;
-    }
-  }, [lang]);
+  const lang = useSyncExternalStore(subscribeLang, getLangSnapshot, getLangServerSnapshot);
 
   const setLang = (newLang: SupportedLanguage) => {
-    setLangState(newLang);
     if (typeof window !== "undefined") {
       localStorage.setItem("claimsaathi_lang", newLang);
       document.documentElement.lang = newLang;
+      window.dispatchEvent(new Event("claimsaathi_lang_change"));
     }
   };
 
@@ -102,18 +108,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useLanguage() {
+export function useLanguage(): LanguageContextType {
   const context = useContext(LanguageContext);
   if (!context) {
-    // Provide safe default if outside provider
-    return {
-      lang: "en" as SupportedLanguage,
-      setLang: () => {},
-      toggleLang: () => {},
-      t: (_p: string, fb?: string) => fb || _p,
-      getGlossaryTerm: () => undefined,
-      glossary: INSURANCE_GLOSSARY,
-    };
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 }

@@ -11,6 +11,7 @@ import {
   PixelCheck,
   PixelAlert,
 } from "@/components/PixelIcons";
+import { useLanguage } from "@/context/LanguageContext";
 
 type SectionKey =
   | "claim_summary"
@@ -20,19 +21,20 @@ type SectionKey =
   | "supporting_evidence_list"
   | "requested_action";
 
-const SECTION_ORDER: { key: SectionKey; label: string; prefix: string }[] = [
-  { key: "claim_summary", label: "Claim & Patient Summary", prefix: "01" },
-  { key: "rejection_reason", label: "Repudiation Cited by Insurer", prefix: "02" },
-  { key: "relevant_clause", label: "Statutory Law & IRDAI Moratorium", prefix: "03" },
-  { key: "factual_clarification", label: "Factual Clarification & Challenge", prefix: "04" },
-  { key: "supporting_evidence_list", label: "Enclosed Evidentiary Documents", prefix: "05" },
-  { key: "requested_action", label: "Specific Relief Demanded & Timelines", prefix: "06" },
+const SECTION_ORDER: { key: SectionKey; labelEn: string; labelHi: string; prefix: string }[] = [
+  { key: "claim_summary", labelEn: "Claim & Patient Summary", labelHi: "क्लेम एवं मरीज़ विवरण", prefix: "01" },
+  { key: "rejection_reason", labelEn: "Repudiation Cited by Insurer", labelHi: "बीमाकर्ता द्वारा उद्धृत अस्वीकृति आधार", prefix: "02" },
+  { key: "relevant_clause", labelEn: "Statutory Law & IRDAI Moratorium", labelHi: "सांविधिक कानून एवं IRDAI मोरेटोरियम", prefix: "03" },
+  { key: "factual_clarification", labelEn: "Factual Clarification & Challenge", labelHi: "तथ्यात्मक स्पष्टीकरण एवं आपत्ति", prefix: "04" },
+  { key: "supporting_evidence_list", labelEn: "Enclosed Evidentiary Documents", labelHi: "संलग्न साक्ष्य दस्तावेज़ सूची", prefix: "05" },
+  { key: "requested_action", labelEn: "Specific Relief Demanded & Timelines", labelHi: "मांगी गई विशिष्ट राहत एवं समय-सीमा", prefix: "06" },
 ];
 
 export default function AppealBuilderPage() {
   const params = useParams();
   const claimId = (params?.id as string) || "CLM-20491";
 
+  const { lang } = useLanguage();
   const [draft, setDraft] = useState<AppealDraft | null>(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(false);
@@ -74,14 +76,13 @@ export default function AppealBuilderPage() {
 
   function handleDownload() {
     setDownloadSuccess(true);
-    // Trigger PDF download simulation or real API endpoint
     const element = document.createElement("a");
     const file = new Blob([
       `CLAIMSAATHI LEGAL APPEAL BRIEF\n` +
       `Claim Reference: ${claimId}\n` +
-      `Date: ${new Date().toLocaleDateString("en-IN")}\n` +
+      `Date: ${new Date().toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN")}\n` +
       `Statutory Authority: IRDAI Master Circular 2024 (Chapter V, Section 5.3)\n\n` +
-      SECTION_ORDER.map(s => `[${s.label.toUpperCase()}]\n${editedContent[s.key] || ""}\n\n`).join("")
+      SECTION_ORDER.map(s => `[${(lang === "hi" ? s.labelHi : s.labelEn).toUpperCase()}]\n${editedContent[s.key] || ""}\n\n`).join("")
     ], { type: "text/plain;charset=utf-8" });
     element.href = URL.createObjectURL(file);
     element.download = `Appeal_Brief_${claimId}.txt`;
@@ -104,6 +105,42 @@ export default function AppealBuilderPage() {
     );
   }
 
+  const t = {
+    backToRejection: lang === "hi" ? "अस्वीकृति डिकोडर पर वापस जाएं" : "Back to Rejection Decoder",
+    claim: lang === "hi" ? "क्लेम" : "Claim",
+    approvedBadge: lang === "hi" ? "प्रस्तुति हेतु स्वीकृत" : "APPROVED FOR SUBMISSION",
+    pendingBadge: lang === "hi" ? "समीक्षा लंबित" : "REVIEW PENDING",
+    title: lang === "hi" ? "अपील प्रारूप निर्माता" : "Appeal Draft Builder",
+    subtitle: lang === "hi"
+      ? "IRDAI मास्टर परिपत्र 2024 अध्याय V (60-माह मोरेटोरियम) पर आधारित औपचारिक प्रथम-स्तरीय शिकायत पत्र"
+      : "Formal First-Level Grievance brief grounded in IRDAI Master Circular 2024 Chapter V (60-Month Moratorium)",
+    editMode: lang === "hi" ? "संपादन मोड" : "Edit Mode",
+    previewDoc: lang === "hi" ? "दस्तावेज़ पूर्वावलोकन" : "Preview Document",
+    recordingApproval: lang === "hi" ? "स्वीकृति दर्ज की जा रही है..." : "Recording Approval...",
+    approveForExport: lang === "hi" ? "निर्यात हेतु स्वीकृत करें" : "Approve for Export",
+    downloadBtn: lang === "hi" ? "अपील प्रारूप डाउनलोड करें (.TXT/PDF)" : "Download Appeal Brief (.TXT/PDF)",
+    gatekeeperTitleApproved: lang === "hi" ? "✓ पॉलिसीधारक स्वीकृति सत्यापित एवं ऑडिट की गई।" : "✓ Policyholder Approval Verified & Audited.",
+    gatekeeperTitlePending: lang === "hi" ? "सत्यापन प्रोटोकॉल:" : "Gatekeeper Verification Protocol:",
+    gatekeeperBodyApproved: lang === "hi"
+      ? "स्वीकृत। दस्तावेज़ डाउनलोड और बीमाकर्ता के पास प्रस्तुत करने के लिए अनलॉक हो चुका है।"
+      : "Approved. Document unlocked for download and submission to your insurer.",
+    gatekeeperBodyPending: lang === "hi"
+      ? "कृपया नीचे दिए गए प्रत्येक क्लॉज की समीक्षा करें। आवश्यक होने पर किसी भी तथ्य को संपादित करें। बीमाकर्ता को अंतिम प्रस्तुति का एकमात्र अधिकार आपके पास सुरक्षित है।"
+      : "You must review every clause below. Edit any fact if required. You retain sole authority over final submission to the insurer.",
+    downloadSuccess: lang === "hi"
+      ? "अपील प्रारूप सफलतापूर्वक डाउनलोड हो गया। इसे 2018-2026 की नवीनीकरण रसीदों के साथ संलग्न करें और स्टार हेल्थ शिकायत निवारण अधिकारी (GRO) को भेजें।"
+      : "Appeal Brief downloaded successfully. You can attach this with your 2018-2026 renewal receipts and submit to Star Health Grievance Redressal Officer (GRO).",
+    sectionPrefix: lang === "hi" ? "अनुभाग" : "SECTION",
+    editBtn: lang === "hi" ? "संपादित करें" : "Edit Section",
+    saveBtn: lang === "hi" ? "सहेजें" : "Save",
+    confirmEdits: lang === "hi" ? "संशोधन की पुष्टि करें" : "Confirm Edits",
+    statutoryTitle: lang === "hi" ? "IRDAI सांविधिक सूचना:" : "IRDAI Statutory Notice:",
+    statutoryBody: lang === "hi"
+      ? "ClaimSaathi IRDAI 2024 मास्टर परिपत्र पर आधारित ग्राहक-पक्षीय शिकायत पत्र तैयार करता है। पॉलिसीधारक को तिथियों की पुष्टि करनी चाहिए और इसे सीधे बीमाकर्ता के शिकायत निवारण अधिकारी (GRO) को प्रस्तुत करना चाहिए। यदि 30 दिनों के भीतर समाधान न हो, तो बीमा लोकपाल नियम, 2017 के नियम 17 के तहत बीमा लोकपाल के पास शिकायत दर्ज करें।"
+      : "ClaimSaathi generates customer-side grievance briefs grounded in the IRDAI 2024 Master Circular. Policyholders must verify dates and submit directly to the Insurer Grievance Redressal Officer (GRO). If unaddressed within 30 days, file with the Insurance Ombudsman under Rule 17 of the Insurance Ombudsman Rules, 2017.",
+    rejectionDecoderLink: lang === "hi" ? "अस्वीकृति डिकोडर" : "Rejection Decoder",
+  };
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <MistralNavbar claimId={claimId} />
@@ -121,18 +158,18 @@ export default function AppealBuilderPage() {
                     href={`/claims/${claimId}/rejection`}
                     style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 600 }}
                   >
-                    <PixelArrowLeft size={14} /> Back to Rejection Decoder
+                    <PixelArrowLeft size={14} /> {t.backToRejection}
                   </Link>
                   <span style={{ color: "var(--border-secondary)" }}>/</span>
-                  <span className="text-eyebrow">Claim {claimId}</span>
+                  <span className="text-eyebrow">{t.claim} {claimId}</span>
                   <span className={`mistral-badge ${isApproved ? "badge-ready" : "badge-warning"}`}>
-                    {isApproved ? "APPROVED FOR SUBMISSION" : "REVIEW PENDING"}
+                    {isApproved ? t.approvedBadge : t.pendingBadge}
                   </span>
                 </div>
 
-                <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>Appeal Draft Builder</h1>
+                <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>{t.title}</h1>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-                  Formal First-Level Grievance brief grounded in IRDAI Master Circular 2024 Chapter V (60-Month Moratorium)
+                  {t.subtitle}
                 </p>
               </div>
 
@@ -143,7 +180,7 @@ export default function AppealBuilderPage() {
                   onClick={() => setPreviewMode(!previewMode)}
                   className="btn-mistral-outline"
                 >
-                  {previewMode ? "Edit Mode" : "Preview Document"}
+                  {previewMode ? t.editMode : t.previewDoc}
                 </button>
 
                 {!isApproved ? (
@@ -154,7 +191,7 @@ export default function AppealBuilderPage() {
                     className="btn-mistral-solid"
                     id="approve-appeal-btn"
                   >
-                    <PixelCheck size={16} /> {approving ? "Recording Approval..." : "Approve for Export"}
+                    <PixelCheck size={16} /> {approving ? t.recordingApproval : t.approveForExport}
                   </button>
                 ) : (
                   <button
@@ -164,7 +201,7 @@ export default function AppealBuilderPage() {
                     style={{ backgroundColor: "var(--mistral-emerald)", borderColor: "var(--mistral-emerald)" }}
                     id="download-appeal-btn"
                   >
-                    <PixelCheck size={16} /> Download Appeal Brief (.TXT/PDF)
+                    <PixelCheck size={16} /> {t.downloadBtn}
                   </button>
                 )}
               </div>
@@ -176,15 +213,9 @@ export default function AppealBuilderPage() {
             <PixelAlert size={16} />
             <div>
               <strong style={{ color: "var(--text-primary)" }}>
-                {isApproved
-                  ? "✓ Policyholder Approval Verified & Audited."
-                  : "Gatekeeper Verification Protocol:"}
+                {isApproved ? t.gatekeeperTitleApproved : t.gatekeeperTitlePending}
               </strong>{" "}
-              {isApproved
-                ? draft?.approved_at
-                  ? `Approved at ${new Date(draft.approved_at).toLocaleTimeString("en-IN")}. Document unlocked for download and submission to your insurer.`
-                  : "Approved. Document unlocked for download and submission to your insurer."
-                : "You must review every clause below. Edit any fact if required. You retain sole authority over final submission to the insurer."}
+              {isApproved ? t.gatekeeperBodyApproved : t.gatekeeperBodyPending}
             </div>
           </div>
 
@@ -196,27 +227,28 @@ export default function AppealBuilderPage() {
 
           {downloadSuccess && (
             <div style={{ padding: "1rem 2rem", backgroundColor: "var(--status-ready-bg)", borderBottom: "1px solid var(--status-ready-border)", color: "var(--status-ready-text)", fontSize: "0.875rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <PixelCheck size={16} /> Appeal Brief downloaded successfully. You can attach this with your 2018-2026 renewal receipts and submit to Star Health Grievance Redressal Officer (GRO).
+              <PixelCheck size={16} /> {t.downloadSuccess}
             </div>
           )}
 
           {/* Six-Section Appeal Letter */}
           {draft?.content_json && (
             <div className="divide-grid-y">
-              {SECTION_ORDER.map(({ key, label, prefix }) => {
+              {SECTION_ORDER.map(({ key, labelEn, labelHi, prefix }) => {
                 const section = draft.content_json![key];
                 const isEditing = activeEdit === key && !previewMode && !isApproved;
+                const sectionTitle = lang === "hi" ? labelHi : (section?.title || labelEn);
 
                 return (
                   <div key={key} className="mistral-cell" id={`section-${key}`}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>
-                          SECTION {prefix}
+                          {t.sectionPrefix} {prefix}
                         </span>
                         <span style={{ color: "var(--border-secondary)" }}>•</span>
                         <h4 className="text-h4" style={{ margin: 0 }}>
-                          {section?.title || label}
+                          {sectionTitle}
                         </h4>
                       </div>
 
@@ -227,7 +259,7 @@ export default function AppealBuilderPage() {
                           className="btn-mistral-ghost"
                           style={{ fontSize: "0.75rem", padding: "0.25rem 0.6rem" }}
                         >
-                          {isEditing ? "Save" : "Edit Section"}
+                          {isEditing ? t.saveBtn : t.editBtn}
                         </button>
                       )}
                     </div>
@@ -249,7 +281,7 @@ export default function AppealBuilderPage() {
                           className="btn-mistral-outline"
                           style={{ marginTop: "0.5rem", fontSize: "0.8rem", padding: "0.35rem 0.75rem" }}
                         >
-                          Confirm Edits
+                          {t.confirmEdits}
                         </button>
                       </div>
                     ) : (
@@ -274,14 +306,14 @@ export default function AppealBuilderPage() {
           <div className="border-t-grid mistral-banner-notice">
             <PixelAlert size={16} />
             <p>
-              <strong>IRDAI Statutory Notice:</strong> ClaimSaathi generates customer-side grievance briefs grounded in the IRDAI 2024 Master Circular. Policyholders must verify dates and submit directly to the Insurer Grievance Redressal Officer (GRO). If unaddressed within 30 days, file with the Insurance Ombudsman under Rule 17 of the Insurance Ombudsman Rules, 2017.
+              <strong>{t.statutoryTitle}</strong> {t.statutoryBody}
             </p>
           </div>
 
           {/* Footer Action Strip */}
           <div className="border-t-grid" style={{ padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             <Link href={`/claims/${claimId}/rejection`} className="btn-mistral-outline">
-              <PixelArrowLeft size={16} /> Rejection Decoder
+              <PixelArrowLeft size={16} /> {t.rejectionDecoderLink}
             </Link>
 
             {!isApproved ? (
@@ -295,7 +327,7 @@ export default function AppealBuilderPage() {
                 <span className="cta-arrow-left">
                   <PixelArrowRight size={18} />
                 </span>
-                <span className="cta-label">Approve for Export</span>
+                <span className="cta-label">{t.approveForExport}</span>
                 <span className="cta-arrow-right">
                   <PixelArrowRight size={18} />
                 </span>
@@ -307,7 +339,7 @@ export default function AppealBuilderPage() {
                 className="btn-mistral-solid"
                 style={{ backgroundColor: "var(--mistral-emerald)", borderColor: "var(--mistral-emerald)" }}
               >
-                <PixelCheck size={16} /> Download Signed Brief (.TXT/PDF)
+                <PixelCheck size={16} /> {t.downloadBtn}
               </button>
             )}
           </div>

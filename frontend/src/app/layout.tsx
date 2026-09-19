@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { LanguageProvider } from "@/context/LanguageContext";
+import Chatbot from "@/components/Chatbot";
 
 export const metadata: Metadata = {
   title: "ClaimSaathi — Frontier Insurance Claim Intelligence",
@@ -39,7 +41,13 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body>{children}</body>
+      <body>
+        <LanguageProvider>
+          {children}
+          <Chatbot />
+        </LanguageProvider>
+      </body>
     </html>
   );
 }
+

@@ -6,6 +6,9 @@ This is the modular monolith root — each module registers its own router here.
 """
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import redis.asyncio as aioredis
 from contextlib import asynccontextmanager
 from typing import Any
@@ -88,6 +91,8 @@ def create_app() -> FastAPI:
     app.include_router(claims_router, prefix="/api/v1")
     from app.documents.router import router as documents_router
     app.include_router(documents_router, prefix="/api/v1")
+    from app.chat.router import router as chat_router
+    app.include_router(chat_router, prefix="/api/v1")
     # from app.consent.router import router as consent_router
     # app.include_router(consent_router, prefix="/api/v1")
     # from app.audit.router import router as audit_router

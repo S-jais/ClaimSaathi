@@ -494,3 +494,119 @@ export const claims = {
     }
   },
 };
+
+// --- Chat / AI Companion ---
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  claim_id: string;
+}
+
+export const chat = {
+  /** Non-streaming: returns full answer */
+  async send(question: string, claimId: string = "CLM-20491", history: ChatMessage[] = []): Promise<string> {
+    try {
+      const data = await request<ChatResponse>("/api/v1/chat/message", {
+        method: "POST",
+        body: JSON.stringify({
+          question,
+          claim_id: claimId,
+          history: history.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      return data.answer;
+    } catch {
+      // Fallback mock responses
+      return _mockChatFallback(question);
+    }
+  },
+
+  /** Streaming: calls onChunk for each SSE chunk, returns when done */
+  async stream(
+    question: string,
+    claimId: string = "CLM-20491",
+    history: ChatMessage[] = [],
+    onChunk: (chunk: string) => void,
+    onDone: () => void,
+    onError: (err: string) => void,
+  ): Promise<void> {
+    const correlationId = crypto.randomUUID?.() ?? "req-" + Date.now();
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const res = await fetch(`${API_BASE}/api/v1/chat/stream`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Correlation-ID": correlationId,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          question,
+          claim_id: claimId,
+          history: history.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok || !res.body) {
+        // Backend down — use mock
+        onChunk(_mockChatFallback(question));
+        onDone();
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value, { stream: true });
+        const lines = text.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") { onDone(); return; }
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.chunk) onChunk(parsed.chunk);
+              if (parsed.error) onError(parsed.error);
+            } catch { /* partial chunk, skip */ }
+          }
+        }
+      }
+      onDone();
+    } catch {
+      // Network error — mock fallback
+      onChunk(_mockChatFallback(question));
+      onDone();
+    }
+  },
+};
+
+function _mockChatFallback(question: string): string {
+  const q = question.toLowerCase();
+  if (q.includes("reject") || q.includes("clause 4") || q.includes("repudiat")) {
+    return "Your claim was repudiated under **Clause 4.2** (24-month waiting period). However, your policy is **78 months old** — exceeding the IRDAI 2024 statutory 60-month moratorium. This repudiation is legally contestable. File a formal grievance with the insurer's GRO citing IRDAI Master Circular 2024, Chapter V, Section 5.3.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+  }
+  if (q.includes("document") || q.includes("missing") || q.includes("icp")) {
+    return "The only missing document is your **Indoor Case Papers (ICPs)**. Request them from Apollo Hospital's Medical Records Department (MRD) for admission Feb 10-14, 2026. All other 5 documents are verified.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+  }
+  if (q.includes("appeal") || q.includes("gro") || q.includes("ombudsman")) {
+    return "**Appeal path:** 1) Send appeal letter to Star Health GRO, 2) Attach renewal receipts 2018-2026, 3) If no response in 30 days → Insurance Ombudsman (Bengaluru) under Rule 17. Use the Appeal Builder tab to generate your letter.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+  }
+  return "I'm your ClaimSaathi AI companion. Ask me about your claim rejection, missing documents, the IRDAI moratorium, or how to file an appeal.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+}
+

@@ -222,3 +222,30 @@ class ClaimReadinessRulesEngine:
             flags=flags,
             missing_mandatory=missing_mandatory,
         )
+
+
+def evaluate_claim_readiness(
+    claim_id: str,
+    claim_type: str,
+    uploaded_documents: list[dict[str, Any]],
+    claim_amount: Any = None,
+    sum_insured: Any = None,
+    patient_name: str | None = None,
+    policyholder_name: str | None = None,
+    admission_date: Any = None,
+    discharge_date: Any = None,
+) -> ReadinessResult:
+    """Convenience helper to evaluate claim readiness with default engine."""
+    engine = ClaimReadinessRulesEngine()
+    return engine.evaluate(
+        claim_id=claim_id,
+        claim_type=claim_type,
+        uploaded_documents=uploaded_documents,
+        claim_amount=claim_amount,
+        sum_insured=sum_insured,
+        patient_name=patient_name,
+        policyholder_name=policyholder_name,
+        admission_date=admission_date,
+        discharge_date=discharge_date,
+    )
+
