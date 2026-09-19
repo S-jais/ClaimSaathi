@@ -67,7 +67,7 @@ class ConflictError(ClaimSaathiError):
 
 
 class ValidationError(ClaimSaathiError):
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
     error_type = "https://claimsaathi.in/errors/validation"
     title = "Validation Error"
 
@@ -168,7 +168,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         ]
         logger.info("validation_error", errors=errors, path=str(request.url))
         return _problem_response(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422),
             "https://claimsaathi.in/errors/validation",
             "Validation Error",
             "One or more fields are invalid.",

@@ -55,7 +55,6 @@ def configure_logging() -> None:
 
     if settings.LOG_FORMAT == "json":
         processors = shared_processors + [
-            structlog.processors.format_by_level,
             structlog.processors.JSONRenderer(),
         ]
     else:
