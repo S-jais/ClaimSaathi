@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     APP_ENV: Literal["development", "staging", "production"] = "development"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
+    ENABLE_DOCS: bool = True
     SECRET_KEY: str = Field(default="948f414affb10f4104b9dcb64850dc4683219a86a2b8500b9472321d32404e52", min_length=32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30

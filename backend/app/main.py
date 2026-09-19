@@ -58,9 +58,9 @@ def create_app() -> FastAPI:
             "The insurer remains the sole regulated decision-maker."
         ),
         version="0.1.0",
-        docs_url="/docs" if not settings.is_production else None,
-        redoc_url="/redoc" if not settings.is_production else None,
-        openapi_url="/openapi.json" if not settings.is_production else None,
+        docs_url="/docs" if settings.ENABLE_DOCS else None,
+        redoc_url="/redoc" if settings.ENABLE_DOCS else None,
+        openapi_url="/openapi.json" if settings.ENABLE_DOCS else None,
         lifespan=lifespan,
     )
 
@@ -101,6 +101,19 @@ def create_app() -> FastAPI:
     # app.include_router(notifications_router, prefix="/api/v1")
 
     # --- Ops endpoints ---
+    @app.get("/", tags=["ops"], include_in_schema=False)
+    async def root() -> dict[str, Any]:
+        """Root status endpoint returning API metadata and links."""
+        return {
+            "name": "ClaimSaathi API",
+            "version": "0.1.0",
+            "status": "healthy",
+            "environment": settings.APP_ENV,
+            "docs": "/docs" if settings.ENABLE_DOCS else None,
+            "health": "/health",
+            "readiness": "/readiness",
+        }
+
     @app.get("/health", tags=["ops"], include_in_schema=False)
     async def health() -> dict[str, str]:
         """Process alive check. Returns 200 if the process is running."""
