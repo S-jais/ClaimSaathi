@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     APP_ENV: Literal["development", "staging", "production"] = "development"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
-    SECRET_KEY: str = Field(..., min_length=32)
+    SECRET_KEY: str = Field(default="948f414affb10f4104b9dcb64850dc4683219a86a2b8500b9472321d32404e52", min_length=32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
@@ -38,8 +38,8 @@ class Settings(BaseSettings):
         return v
 
     # --- Database ---
-    DATABASE_URL: str  # async: postgresql+asyncpg://...
-    DATABASE_URL_SYNC: str  # sync: postgresql://... (for Alembic)
+    DATABASE_URL: str = "postgresql+asyncpg://claimsaathi:claimsaathi_dev@localhost:5432/claimsaathi"
+    DATABASE_URL_SYNC: str = "postgresql://claimsaathi:claimsaathi_dev@localhost:5432/claimsaathi"
 
     # --- Redis ---
     REDIS_URL: str = "redis://localhost:6379/0"
