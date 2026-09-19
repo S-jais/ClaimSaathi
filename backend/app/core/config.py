@@ -71,7 +71,10 @@ class Settings(BaseSettings):
     OCR_CONFIDENCE_THRESHOLD: float = 0.70
 
     # --- n8n / Internal service auth ---
-    N8N_SERVICE_SECRET: str = Field(..., min_length=32)
+    N8N_SERVICE_SECRET: str = Field(
+        default="88c96a4b39c664acdc6a2ee43b489db2971cac6aa83e919f970e2b31a58cd589",
+        min_length=32,
+    )
     N8N_WEBHOOK_BASE_URL: str = "http://n8n:5678/webhook"
     BACKEND_INTERNAL_BASE_URL: str = "http://backend:8000/internal"
 
