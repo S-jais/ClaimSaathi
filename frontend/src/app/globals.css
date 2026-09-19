@@ -1,0 +1,883 @@
+/* ============================================================
+   ClaimSaathi — Mistral AI Design System
+   Inspired by Mistral.ai: Structural grid, editorial typography,
+   warm cream light mode, sleek charcoal dark mode, pixel icons,
+   and precision micro-interactions.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ---------------------------------------------------------------------------
+   CSS Custom Properties (Mistral Tokens)
+   --------------------------------------------------------------------------- */
+:root {
+  /* Surfaces (Warm Cream Light Mode) */
+  --surface-brand-primary: #FAF9F5;
+  --surface-brand-secondary: #F2EFE9;
+  --surface-brand-tertiary: #E8E3D8;
+  --surface-brand-glass: rgba(250, 249, 245, 0.85);
+
+  /* Borders (1px Structural Grid) */
+  --border-primary: #E2DDD3;
+  --border-secondary: #D1C9BC;
+  --border-focus: #121217;
+
+  /* Typography */
+  --text-primary: #121217;
+  --text-secondary: #484755;
+  --text-tertiary: #787685;
+  --text-invert: #FAF9F5;
+
+  /* Actions & Buttons */
+  --action-primary: #121217;
+  --action-secondary: #2B2B38;
+  --action-ghost-1: rgba(18, 18, 23, 0.05);
+  --action-ghost-2: rgba(18, 18, 23, 0.09);
+
+  /* Mistral Flame Palette (5 Iconic Levels) */
+  --mistral-amber: #FFAF01;
+  --mistral-orange: #FF8204;
+  --mistral-flame: #FA500F;
+  --mistral-red: #E61300;
+  --mistral-crimson: #C4001D;
+  --mistral-blue: #0082E6;
+  --mistral-emerald: #0E9F6E;
+
+  /* Status Colors */
+  --status-ready-bg: rgba(14, 159, 110, 0.1);
+  --status-ready-border: rgba(14, 159, 110, 0.3);
+  --status-ready-text: #065F46;
+
+  --status-warn-bg: rgba(255, 175, 1, 0.12);
+  --status-warn-border: rgba(255, 175, 1, 0.4);
+  --status-warn-text: #92400E;
+
+  --status-danger-bg: rgba(230, 19, 0, 0.09);
+  --status-danger-border: rgba(230, 19, 0, 0.3);
+  --status-danger-text: #991B1B;
+
+  --status-info-bg: rgba(0, 130, 230, 0.09);
+  --status-info-border: rgba(0, 130, 230, 0.3);
+  --status-info-text: #0369A1;
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mistral: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Shadows */
+  --shadow-nav: 0 12px 32px rgba(0, 0, 0, 0.06);
+  --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.09);
+
+  /* Measurements */
+  --header-height: 52px;
+  --max-width: 1340px;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark Mode Theme Overrides
+   --------------------------------------------------------------------------- */
+html.dark {
+  --surface-brand-primary: #0D0D12;
+  --surface-brand-secondary: #14141C;
+  --surface-brand-tertiary: #1C1C28;
+  --surface-brand-glass: rgba(13, 13, 18, 0.85);
+
+  --border-primary: #242433;
+  --border-secondary: #34344A;
+  --border-focus: #F5F5F7;
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #A4A4B5;
+  --text-tertiary: #6D6D7F;
+  --text-invert: #0D0D12;
+
+  --action-primary: #F5F5F7;
+  --action-secondary: #D5D5DF;
+  --action-ghost-1: rgba(245, 245, 247, 0.06);
+  --action-ghost-2: rgba(245, 245, 247, 0.12);
+
+  --status-ready-bg: rgba(16, 185, 129, 0.14);
+  --status-ready-border: rgba(16, 185, 129, 0.3);
+  --status-ready-text: #34D399;
+
+  --status-warn-bg: rgba(255, 175, 1, 0.14);
+  --status-warn-border: rgba(255, 175, 1, 0.35);
+  --status-warn-text: #FBBF24;
+
+  --status-danger-bg: rgba(230, 19, 0, 0.15);
+  --status-danger-border: rgba(230, 19, 0, 0.35);
+  --status-danger-text: #F87171;
+
+  --status-info-bg: rgba(0, 130, 230, 0.14);
+  --status-info-border: rgba(0, 130, 230, 0.35);
+  --status-info-text: #38BDF8;
+
+  --shadow-nav: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------------------------------------------------------------------
+   Reset & Baseline
+   --------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  background-color: var(--surface-brand-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--surface-brand-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   Mistral Layout Grid System
+   --------------------------------------------------------------------------- */
+.max-w-mistral {
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.border-grid-x {
+  border-left: 1px solid var(--border-primary);
+  border-right: 1px solid var(--border-primary);
+}
+
+.border-b-grid {
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.border-t-grid {
+  border-top: 1px solid var(--border-primary);
+}
+
+.divide-grid-x>*+* {
+  border-left: 1px solid var(--border-primary);
+}
+
+.divide-grid-y>*+* {
+  border-top: 1px solid var(--border-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   Typography Utilities
+   --------------------------------------------------------------------------- */
+.font-mistral {
+  font-family: var(--font-mistral);
+  letter-spacing: -0.025em;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.text-display {
+  font-family: var(--font-mistral);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+}
+
+.text-h1 {
+  font-family: var(--font-mistral);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.text-h2 {
+  font-family: var(--font-mistral);
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-h3 {
+  font-family: var(--font-mistral);
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.text-h4 {
+  font-family: var(--font-mistral);
+  font-size: 1.05rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.text-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+/* ---------------------------------------------------------------------------
+   Mistral Flame Color Accent Stripes
+   --------------------------------------------------------------------------- */
+.mistral-stripe {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg,
+      var(--mistral-amber) 0%,
+      var(--mistral-orange) 25%,
+      var(--mistral-flame) 50%,
+      var(--mistral-red) 75%,
+      var(--mistral-crimson) 100%);
+}
+
+.mistral-accent-bar {
+  display: inline-flex;
+  gap: 3px;
+  height: 4px;
+}
+
+.mistral-accent-bar span:nth-child(1) {
+  width: 12px;
+  background: var(--mistral-amber);
+}
+
+.mistral-accent-bar span:nth-child(2) {
+  width: 12px;
+  background: var(--mistral-orange);
+}
+
+.mistral-accent-bar span:nth-child(3) {
+  width: 12px;
+  background: var(--mistral-flame);
+}
+
+.mistral-accent-bar span:nth-child(4) {
+  width: 12px;
+  background: var(--mistral-red);
+}
+
+.mistral-accent-bar span:nth-child(5) {
+  width: 12px;
+  background: var(--mistral-crimson);
+}
+
+/* ---------------------------------------------------------------------------
+   Mistral Global Navigation Bar
+   --------------------------------------------------------------------------- */
+.mistral-nav,
+.claimsaathi-nav {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--header-height);
+  background-color: var(--surface-brand-primary);
+  border-bottom: 1px solid var(--border-primary);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.mistral-nav-inner,
+.claimsaathi-nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 1px solid var(--border-primary);
+  border-right: 1px solid var(--border-primary);
+  box-sizing: border-box;
+}
+
+.mistral-nav-left,
+.claimsaathi-nav-left {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.mistral-nav-brand-link,
+.mistral-nav-logo-box,
+.claimsaathi-nav-logo-box {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  border-right: 1px solid var(--border-primary);
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.mistral-nav-brand-link:hover,
+.mistral-nav-logo-box:hover,
+.claimsaathi-nav-logo-box:hover {
+  background-color: var(--surface-brand-secondary);
+}
+
+.mistral-nav-brand {
+  font-family: var(--font-mistral);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+  padding: 0 1.25rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border-primary);
+  color: var(--text-primary);
+}
+
+.mistral-nav-links,
+.claimsaathi-nav-links {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.mistral-nav-item,
+.claimsaathi-nav-item {
+  font-family: var(--font-mistral);
+  font-size: 0.85rem;
+  font-weight: 500;
+  height: 100%;
+  padding: 0 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border-primary);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.mistral-nav-item:hover,
+.claimsaathi-nav-item:hover,
+.mistral-nav-item.active,
+.claimsaathi-nav-item.active {
+  background-color: var(--surface-brand-secondary);
+  color: var(--text-primary);
+}
+
+.mistral-nav-item.active,
+.claimsaathi-nav-item.active {
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--mistral-flame);
+}
+
+.mistral-nav-right,
+.claimsaathi-nav-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.mistral-nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  height: 100%;
+  border-left: 1px solid var(--border-primary);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mistral);
+}
+
+.mistral-nav-user-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.btn-nav-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 30px;
+  padding: 0 0.65rem;
+  margin: 0 0.65rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--surface-brand-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-nav-lang:hover {
+  background-color: var(--border-primary);
+  color: var(--mistral-flame);
+}
+
+.btn-nav-icon {
+  width: var(--header-height);
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--border-primary);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-top: none;
+  border-bottom: none;
+  border-right: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.btn-nav-icon:hover {
+  background-color: var(--surface-brand-secondary);
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   Mistral Signature CTA Buttons with Sliding Pixel Arrow
+   --------------------------------------------------------------------------- */
+.btn-mistral-cta,
+.btn-claimsaathi-cta {
+  position: relative;
+  height: 100%;
+  padding: 0 1.35rem;
+  background-color: var(--action-primary);
+  color: var(--text-invert);
+  font-family: var(--font-mistral);
+  font-size: 0.825rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  overflow: hidden;
+  border-left: 1px solid var(--border-primary);
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+  min-width: 120px;
+}
+
+.btn-mistral-cta:hover,
+.btn-claimsaathi-cta:hover {
+  background-color: var(--action-secondary);
+  color: var(--text-invert);
+}
+
+/* Sliding animation inside CTA button */
+.btn-mistral-cta .cta-arrow-left,
+.btn-claimsaathi-cta .cta-arrow-left {
+  position: absolute;
+  left: 0.85rem;
+  transform: translateX(-36px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.btn-mistral-cta:hover .cta-arrow-left,
+.btn-claimsaathi-cta:hover .cta-arrow-left {
+  transform: translateX(0);
+}
+
+.btn-mistral-cta .cta-label,
+.btn-claimsaathi-cta .cta-label {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.btn-mistral-cta:hover .cta-label,
+.btn-claimsaathi-cta:hover .cta-label {
+  transform: translateX(18px);
+}
+
+.btn-mistral-cta .cta-arrow-right,
+.btn-claimsaathi-cta .cta-arrow-right {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.btn-mistral-cta:hover .cta-arrow-right,
+.btn-claimsaathi-cta:hover .cta-arrow-right {
+  transform: translateX(36px);
+}
+
+.btn-mistral-cta:hover .cta-arrow-right {
+  transform: translateX(36px);
+}
+
+/* Button Variants */
+.btn-mistral-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background-color: var(--action-primary);
+  color: var(--text-invert);
+  font-family: var(--font-mistral);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--action-primary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-mistral-solid:hover {
+  background-color: var(--action-secondary);
+  border-color: var(--action-secondary);
+}
+
+.btn-mistral-solid:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-mistral-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background-color: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-mistral);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--border-primary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-mistral-outline:hover {
+  background-color: var(--surface-brand-secondary);
+  border-color: var(--border-secondary);
+}
+
+.btn-mistral-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background-color: var(--action-ghost-1);
+  color: var(--text-primary);
+  font-family: var(--font-mistral);
+  font-size: 0.825rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease;
+}
+
+.btn-mistral-ghost:hover {
+  background-color: var(--action-ghost-2);
+}
+
+.btn-nav-icon {
+  width: var(--header-height);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-nav-icon:hover {
+  background-color: var(--surface-brand-secondary);
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   Mistral Cards & Compartments
+   --------------------------------------------------------------------------- */
+.mistral-card {
+  background-color: var(--surface-brand-primary);
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.mistral-card-interactive:hover {
+  background-color: var(--surface-brand-secondary);
+}
+
+.mistral-cell {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.mistral-cell-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-primary);
+  background-color: var(--surface-brand-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ---------------------------------------------------------------------------
+   Mistral Status Chips & Badges
+   --------------------------------------------------------------------------- */
+.mistral-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--surface-brand-secondary);
+  color: var(--text-secondary);
+}
+
+.badge-ready {
+  background-color: var(--status-ready-bg);
+  border-color: var(--status-ready-border);
+  color: var(--status-ready-text);
+}
+
+.badge-warning {
+  background-color: var(--status-warn-bg);
+  border-color: var(--status-warn-border);
+  color: var(--status-warn-text);
+}
+
+.badge-danger {
+  background-color: var(--status-danger-bg);
+  border-color: var(--status-danger-border);
+  color: var(--status-danger-text);
+}
+
+.badge-info {
+  background-color: var(--status-info-bg);
+  border-color: var(--status-info-border);
+  color: var(--status-info-text);
+}
+
+.badge-demo {
+  background-color: rgba(250, 80, 15, 0.12);
+  border-color: rgba(250, 80, 15, 0.35);
+  color: var(--mistral-flame);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+   Form Elements
+   --------------------------------------------------------------------------- */
+.mistral-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--surface-brand-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  outline: none;
+}
+
+.mistral-input:focus {
+  border-color: var(--border-focus);
+  background-color: var(--surface-brand-secondary);
+}
+
+.mistral-textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background-color: var(--surface-brand-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 0.925rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.mistral-textarea:focus {
+  border-color: var(--border-focus);
+  background-color: var(--surface-brand-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   Progress Bar (5-color Mistral gradient)
+   --------------------------------------------------------------------------- */
+.mistral-progress-track {
+  width: 100%;
+  height: 6px;
+  background-color: var(--surface-brand-secondary);
+  border: 1px solid var(--border-primary);
+  overflow: hidden;
+}
+
+.mistral-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg,
+      var(--mistral-amber) 0%,
+      var(--mistral-orange) 30%,
+      var(--mistral-flame) 60%,
+      var(--mistral-red) 100%);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   Interactive Row Link (with slide animation)
+   --------------------------------------------------------------------------- */
+.mistral-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-primary);
+  background-color: var(--surface-brand-primary);
+  transition: background-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mistral-list-row:hover {
+  background-color: var(--surface-brand-secondary);
+}
+
+.mistral-list-row .arrow-indicator {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mistral-list-row:hover .arrow-indicator {
+  transform: translateX(6px);
+}
+
+/* ---------------------------------------------------------------------------
+   Disclaimer & Legal Banner
+   --------------------------------------------------------------------------- */
+.mistral-banner-notice {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border-primary);
+  background-color: var(--surface-brand-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+   Main Layout Padding
+   --------------------------------------------------------------------------- */
+.mistral-main {
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------------------------------------------------------------------
+   Spinner Animation
+   --------------------------------------------------------------------------- */
+@keyframes mistralSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.mistral-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: mistralSpin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive Breakpoints
+   --------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mistral-nav-links {
+    display: none;
+  }
+
+  .border-grid-x {
+    border-left: none;
+    border-right: none;
+  }
+
+  .mistral-cell {
+    padding: 1rem;
+  }
+
+  .text-display {
+    font-size: 2.25rem;
+  }
+}

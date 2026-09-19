@@ -1,0 +1,72 @@
+{
+  "brand": {
+    "name": "ClaimSaathi",
+    "tagline": "AI Insurance Claim Copilot",
+    "subline": "Patient-first health insurance reimbursement intelligence",
+    "irdaiAligned": "IRDAI Master Circular 2024 Grounded"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "readiness": "Readiness Check",
+    "rejection": "Rejection Decoder",
+    "appeal": "Appeal Builder",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "dashboard": {
+    "title": "Claim Command Center",
+    "subtitle": "Track, analyze, and appeal your health insurance claims with patient-centric AI assistance.",
+    "totalClaims": "Total Claims",
+    "inReview": "In Readiness Audit",
+    "rejected": "Repudiated Claims",
+    "amount": "Disputed Amount",
+    "recentClaims": "Your Claims",
+    "viewReadiness": "Readiness",
+    "decodeRejection": "Decode Rejection",
+    "buildAppeal": "Appeal Draft"
+  },
+  "readiness": {
+    "title": "Claim Readiness Verification",
+    "subtitle": "Deterministic document audit & regulatory requirement check",
+    "scoreLabel": "Readiness Score",
+    "statusReady": "READY",
+    "statusDeficient": "ACTION NEEDED"
+  },
+  "rejection": {
+    "title": "Rejection Decoder",
+    "subtitle": "Tripartite schema analysis grounded in IRDAI 2024 Master Circular"
+  },
+  "appeal": {
+    "title": "Appeal Draft Builder",
+    "subtitle": "Generate legally-grounded, clause-by-clause rebuttal letters for insurer GRO and Ombudsman."
+  },
+  "chat": {
+    "title": "ClaimSaathi Companion",
+    "status": "Online • Scoped to Claim",
+    "placeholder": "Ask about claim, clauses, or documents...",
+    "send": "Send",
+    "micTooltip": "Speak query (Web Speech API)",
+    "listening": "Listening... click to stop",
+    "processing": "Analyzing claim evidence...",
+    "suggested1": "Why was my claim rejected?",
+    "suggested2": "Explain Moratorium Period in simple Hindi",
+    "suggested3": "What documents are missing from CLM-20491?",
+    "sourcesTitle": "Grounding Evidence & Citations",
+    "confirmYes": "Yes, Prepare Appeal",
+    "confirmNo": "Cancel"
+  },
+  "voice": {
+    "listen": "Listen",
+    "playing": "Speaking...",
+    "paused": "Paused",
+    "replay": "Replay",
+    "stop": "Stop"
+  },
+  "translation": {
+    "title": "Document Translation & Verification",
+    "originalTab": "Original Document (English)",
+    "translatedTab": "Translated (Hindi)",
+    "sideBySideTab": "Side-by-Side Comparison",
+    "disclaimerBanner": "AI-assisted translation. Refer to the original document for authoritative legal wording."
+  }
+}

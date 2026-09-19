@@ -1,0 +1,99 @@
+{
+  "name": "WF6: Grievance Escalation Package Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "package-grievance",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook: Package Grievance",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-package-webhook"
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "http://backend:8000/api/v1/claims/{{$json[\"body\"][\"claim_id\"]}}",
+        "options": {}
+      },
+      "name": "HTTP: Fetch Claim Dossier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "node-fetch-claim"
+    },
+    {
+      "parameters": {
+        "functionCode": "const claim = items[0].json;\nreturn [{\n  json: {\n    claim_reference: claim.claim_reference,\n    package_title: `IRDAI Statutory Grievance Dossier - ${claim.claim_reference}`,\n    dossier_contents: [\n      \"01_Formal_First_Level_Grievance_Appeal_Brief.pdf\",\n      \"02_Apollo_Hospital_Discharge_Summary_Consultant_Notes.pdf\",\n      \"03_Apollo_Hospital_Itemized_Bills_Receipts.pdf\",\n      \"04_Implant_Invoice_Serialized_Barcode_Sticker.pdf\",\n      \"05_Star_Health_Continuous_Renewals_2018_to_2026.pdf\",\n      \"06_IRDAI_Master_Circular_2024_Chapter_V_Moratorium_Excerpt.pdf\",\n      \"07_Insurance_Ombudsman_Rule_17_Jurisdiction_Filing_Form.pdf\"\n    ],\n    statutory_citations: [\n      \"IRDAI Master Circular 2024 (Cir. No. IRDAI/HLT/CIR/06/2024-25, Chapter V, Section 5.3)\",\n      \"Insurance Ombudsman Rules, 2017 (Rule 17 - Manner in which complaint is to be made)\"\n    ],\n    ombudsman_office: \"Office of the Insurance Ombudsman, Bengaluru Jurisdiction\",\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Bundle Regulatory Package",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [720, 300],
+      "id": "node-bundle-pkg"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "dossier_packaged"
+            },
+            {
+              "name": "download_ready",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Deliver Package Ready Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [960, 300],
+      "id": "node-deliver-event"
+    }
+  ],
+  "connections": {
+    "Webhook: Package Grievance": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Fetch Claim Dossier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Fetch Claim Dossier": {
+      "main": [
+        [
+          {
+            "node": "Bundle Regulatory Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bundle Regulatory Package": {
+      "main": [
+        [
+          {
+            "node": "Deliver Package Ready Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

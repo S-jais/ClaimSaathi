@@ -1,0 +1,136 @@
+{
+  "name": "WF2: Claim Readiness Validation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evaluate-readiness",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook: Evaluate Readiness",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-readiness-webhook"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://backend:8000/api/v1/claims/{{$json[\"body\"][\"claim_id\"]}}/readiness-check",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "name": "HTTP: Execute Rules Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "node-exec-rules"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"is_ready\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Is Claim 100% Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [720, 300],
+      "id": "node-check-ready"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "notification_title",
+              "value": "Claim Ready for Submission"
+            },
+            {
+              "name": "message",
+              "value": "All mandatory documents have been verified. You can proceed to submit your claim."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Notify: Ready",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [960, 220],
+      "id": "node-notify-ready"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "notification_title",
+              "value": "Action Required: Missing Documents"
+            },
+            {
+              "name": "message",
+              "value": "={{$json[\"missing_mandatory\"].length}} mandatory documents missing. Please review gaps."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Notify: Gaps Identified",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [960, 380],
+      "id": "node-notify-gaps"
+    }
+  ],
+  "connections": {
+    "Webhook: Evaluate Readiness": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Execute Rules Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Execute Rules Engine": {
+      "main": [
+        [
+          {
+            "node": "Is Claim 100% Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Claim 100% Ready?": {
+      "main": [
+        [
+          {
+            "node": "Notify: Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify: Gaps Identified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

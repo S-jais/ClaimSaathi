@@ -1,0 +1,132 @@
+{
+  "name": "WF5: Claim 30-Day Statutory Clock Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 9,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "name": "Cron: Daily 9:00 AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-daily-cron"
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "http://backend:8000/api/v1/claims?status=appealing",
+        "options": {}
+      },
+      "name": "HTTP: Fetch Appealing Claims",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "node-fetch-appealing"
+    },
+    {
+      "parameters": {
+        "functionCode": "const claims = items;\nconst now = new Date();\nconst results = [];\n\nfor (const item of claims) {\n  const c = item.json;\n  const appealDate = new Date(c.updated_at || c.created_at);\n  const diffDays = Math.floor((now - appealDate) / (1000 * 60 * 60 * 24));\n  \n  results.push({\n    json: {\n      claim_id: c.id,\n      claim_reference: c.claim_reference,\n      days_elapsed: diffDays,\n      ombudsman_eligible: diffDays >= 30,\n      statutory_deadline_exceeded: diffDays > 30\n    }\n  });\n}\n\nreturn results;"
+      },
+      "name": "Calculate Statutory Clock",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [720, 300],
+      "id": "node-calc-clock"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"ombudsman_eligible\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Elapsed >= 30 Days?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [960, 300],
+      "id": "node-check-elapsed"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "alert_type",
+              "value": "ombudsman_escalation_ready"
+            },
+            {
+              "name": "notice",
+              "value": "30-day statutory response clock elapsed under IRDAI 2024 regulations. You may now file directly with the Insurance Ombudsman (Rule 17, Ombudsman Rules 2017)."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Notify Ombudsman Escalation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1200, 220],
+      "id": "node-notify-ombudsman"
+    }
+  ],
+  "connections": {
+    "Cron: Daily 9:00 AM": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Fetch Appealing Claims",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Fetch Appealing Claims": {
+      "main": [
+        [
+          {
+            "node": "Calculate Statutory Clock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Statutory Clock": {
+      "main": [
+        [
+          {
+            "node": "Elapsed >= 30 Days?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Elapsed >= 30 Days?": {
+      "main": [
+        [
+          {
+            "node": "Notify Ombudsman Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

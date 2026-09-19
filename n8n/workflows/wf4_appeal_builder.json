@@ -1,0 +1,136 @@
+{
+  "name": "WF4: Appeal Builder Gatekeeper",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "appeal-workflow",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook: Appeal Initiated",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-appeal-webhook"
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "http://backend:8000/api/v1/claims/{{$json[\"body\"][\"claim_id\"]}}/appeal-draft/latest",
+        "options": {}
+      },
+      "name": "HTTP: Fetch Structured Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "node-fetch-draft"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"status\"]}}",
+              "operation": "equal",
+              "value2": "approved"
+            }
+          ]
+        }
+      },
+      "name": "Is Draft Approved by Customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [720, 300],
+      "id": "node-check-approved"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "ready_for_pdf_export"
+            },
+            {
+              "name": "message",
+              "value": "Policyholder approved. Document unlocked for download."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Unlock Export",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [960, 220],
+      "id": "node-unlock-export"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "gatekeeper_pending"
+            },
+            {
+              "name": "message",
+              "value": "Customer review required. Cannot export without explicit approval."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Enforce Gatekeeper Notice",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [960, 380],
+      "id": "node-enforce-gatekeeper"
+    }
+  ],
+  "connections": {
+    "Webhook: Appeal Initiated": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Fetch Structured Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Fetch Structured Draft": {
+      "main": [
+        [
+          {
+            "node": "Is Draft Approved by Customer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Draft Approved by Customer?": {
+      "main": [
+        [
+          {
+            "node": "Unlock Export",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enforce Gatekeeper Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

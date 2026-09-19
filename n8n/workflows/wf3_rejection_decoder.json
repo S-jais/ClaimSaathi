@@ -1,0 +1,124 @@
+{
+  "name": "WF3: Rejection Decoder Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "decode-rejection",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook: Repudiation Notice Uploaded",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-rejection-webhook"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://backend:8000/api/v1/claims/{{$json[\"body\"][\"claim_id\"]}}/rejection-analysis",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "name": "HTTP: Run Tripartite Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300],
+      "id": "node-run-rejection"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json[\"confidence\"]}}",
+              "operation": "largerEqual",
+              "value2": 0.7
+            }
+          ]
+        }
+      },
+      "name": "Confidence >= 70%?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [720, 300],
+      "id": "node-check-confidence"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://backend:8000/api/v1/claims/{{$json[\"claim_id\"]}}/appeal-draft/generate",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "name": "Trigger Appeal Draft Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [960, 220],
+      "id": "node-trigger-appeal"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "flag",
+              "value": "low_confidence_review_required"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Flag Manual Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [960, 380],
+      "id": "node-flag-manual"
+    }
+  ],
+  "connections": {
+    "Webhook: Repudiation Notice Uploaded": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Run Tripartite Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Run Tripartite Analysis": {
+      "main": [
+        [
+          {
+            "node": "Confidence >= 70%?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confidence >= 70%?": {
+      "main": [
+        [
+          {
+            "node": "Trigger Appeal Draft Generation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Flag Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

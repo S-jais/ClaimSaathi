@@ -1,0 +1,129 @@
+{
+  "name": "WF1: Document Processing Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "document-uploaded",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook: Document Uploaded",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-doc-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const doc = items[0].json.body;\nreturn [{\n  json: {\n    document_id: doc.document_id,\n    claim_id: doc.claim_id,\n    doc_type: doc.doc_type,\n    size_bytes: doc.size_bytes,\n    mime_type: doc.mime_type,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Parse Metadata & Checksum",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "node-parse-meta"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"doc_type\"]}}",
+              "operation": "notEqual",
+              "value2": "unknown"
+            }
+          ]
+        }
+      },
+      "name": "Validate Document Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "node-validate-type"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://backend:8000/api/v1/claims/{{$json[\"claim_id\"]}}/readiness-check",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "name": "Trigger Readiness Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [920, 240],
+      "id": "node-trigger-readiness"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "processed_at",
+              "value": "={{new Date().toISOString()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Emit Audit Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1140, 240],
+      "id": "node-emit-audit"
+    }
+  ],
+  "connections": {
+    "Webhook: Document Uploaded": {
+      "main": [
+        [
+          {
+            "node": "Parse Metadata & Checksum",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Metadata & Checksum": {
+      "main": [
+        [
+          {
+            "node": "Validate Document Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Document Type": {
+      "main": [
+        [
+          {
+            "node": "Trigger Readiness Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Readiness Engine": {
+      "main": [
+        [
+          {
+            "node": "Emit Audit Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

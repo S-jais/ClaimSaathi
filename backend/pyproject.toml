@@ -1,0 +1,91 @@
+[tool.poetry]
+name = "claimsaathi-backend"
+version = "0.1.0"
+description = "ClaimSaathi — AI-powered customer-side insurance claim copilot"
+authors = ["Team Static <team@claimsaathi.demo>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+# Web framework
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.30.0"}
+httpx = "^0.27.0"
+
+# Database
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.0"}
+asyncpg = "^0.29.0"
+psycopg2-binary = "^2.9.9"   # for Alembic sync operations
+alembic = "^1.13.0"
+pgvector = "^0.3.0"
+
+# Redis + RQ
+redis = {extras = ["hiredis"], version = "^5.0.0"}
+rq = "^1.16.0"
+
+# Object storage
+boto3 = "^1.34.0"       # S3-compatible (MinIO uses same API)
+minio = "^7.2.0"        # MinIO Python SDK
+
+# Validation
+pydantic = {extras = ["email"], version = "^2.7.0"}
+pydantic-settings = "^2.3.0"
+
+# Auth
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.9"
+
+# LLM
+openai = "^1.35.0"
+tiktoken = "^0.7.0"
+google-generativeai = "^0.7.0"
+
+# Document AI / OCR
+google-cloud-documentai = "^2.29.0"
+
+# PDF generation
+weasyprint = "^62.3"
+
+# File validation
+python-magic = "^0.4.27"
+
+# Utilities
+structlog = "^24.2.0"
+slowapi = "^0.1.9"
+tenacity = "^8.3.0"
+aiofiles = "^23.2.0"
+python-dateutil = "^2.9.0"
+orjson = "^3.10.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-asyncio = "^0.23.0"
+pytest-cov = "^5.0.0"
+pytest-httpx = "^0.30.0"
+httpx = "^0.27.0"
+factory-boy = "^3.3.0"
+faker = "^25.0.0"
+ruff = "^0.5.0"
+mypy = "^1.10.0"
+types-python-jose = "*"
+types-passlib = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing -q"
