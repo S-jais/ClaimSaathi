@@ -48,7 +48,7 @@ export default function ClaimHubPage() {
     admission_date: "2026-02-10",
     discharge_date: "2026-02-14",
     readiness_score: 85,
-    is_demo: true,
+    is_demo: false,
     created_at: "2026-02-15T09:30:00Z",
     updated_at: "2026-02-28T14:15:00Z",
   };
@@ -75,7 +75,7 @@ export default function ClaimHubPage() {
                   </Link>
                   <span style={{ color: "var(--border-secondary)" }}>/</span>
                   <span className="text-eyebrow">COMMAND CENTER</span>
-                  <span className="mistral-badge badge-demo">DEMO RECORD</span>
+                  <span className="mistral-badge badge-ready">ACTIVE RECORD</span>
                 </div>
 
                 <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>

@@ -716,6 +716,7 @@ select {
   color: var(--status-info-text);
 }
 
+.badge-flame,
 .badge-demo {
   background-color: rgba(250, 80, 15, 0.12);
   border-color: rgba(250, 80, 15, 0.35);

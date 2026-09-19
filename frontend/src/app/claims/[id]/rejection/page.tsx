@@ -243,7 +243,7 @@ export default function RejectionDecoderPage() {
                   <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>
                     {t.interpTag}
                   </span>
-                  <span className="mistral-badge badge-demo">{t.interpBadge}</span>
+                  <span className="mistral-badge badge-flame">{t.interpBadge}</span>
                 </div>
                 <div style={{ color: "var(--text-primary)", fontSize: "0.95rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                   {interpText}

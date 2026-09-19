@@ -109,11 +109,6 @@ export function Navbar({ claimId, user, onLogout }: NavbarProps) {
               <span className="mistral-nav-user-name">
                 {user.full_name?.split(" ")[0] || user.email.split("@")[0]}
               </span>
-              {user.is_demo && (
-                <span className="mistral-badge badge-demo" style={{ fontSize: "10px", padding: "1px 5px" }}>
-                  DEMO
-                </span>
-              )}
             </div>
           )}
 

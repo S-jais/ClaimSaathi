@@ -117,7 +117,7 @@ export default function ClaimReadinessPage() {
                   </Link>
                   <span style={{ color: "var(--border-secondary)" }}>/</span>
                   <span className="text-eyebrow">{lang === "hi" ? "क्लेम" : "Claim"} {claimId}</span>
-                  <span className="mistral-badge badge-demo">Star Health</span>
+                  <span className="mistral-badge badge-ready">Star Health</span>
                 </div>
 
                 <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>

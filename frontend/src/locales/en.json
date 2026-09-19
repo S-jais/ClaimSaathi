@@ -17,7 +17,7 @@
     "title": "Claim Command Center",
     "subtitle": "Track, analyze, and appeal your health insurance claims with patient-centric AI assistance.",
     "workspace": "WORKSPACE / CLAIMS PORTFOLIO",
-    "demoAccount": "DEMO ACCOUNT",
+    "activeAccount": "ACTIVE ACCOUNT",
     "welcome": "Welcome, {name}",
     "welcomeDefault": "Welcome, Policyholder",
     "groundingBanner": "Active claim assistance portal · Grounded in IRDAI Master Circular (Chapter V Moratorium)",

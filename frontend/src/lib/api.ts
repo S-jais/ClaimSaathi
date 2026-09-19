@@ -317,16 +317,7 @@ export interface AppealDraft {
   approved_at: string | null;
 }
 
-// --- Seed Demo Data for Evaluation ---
-const DEMO_USER: UserProfile = {
-  id: "usr-demo-ramesh-2026",
-  email: "ramesh.kumar@demo.claimsaathi.in",
-  full_name: "Ramesh Kumar",
-  roles: ["policyholder"],
-  mfa_enabled: false,
-  is_demo: true,
-  created_at: "2026-01-15T10:00:00Z",
-};
+// --- Claim Templates ---
 
 const DEMO_CLAIMS: Claim[] = [
   {
@@ -444,7 +435,7 @@ let demoDraftState: AppealDraft = {
     claim_summary: {
       title: "1. Claim & Patient Summary",
       content:
-        "Claimant: Ramesh Kumar\nPolicy No: SH-884920 (Star Health MediClassic Individual)\nClaim Reference: CLM-20491\nHospital: Apollo Hospital, Bannerghatta Road, Bengaluru\nAdmission: 10-Feb-2026 | Discharge: 14-Feb-2026\nDiagnosis & Procedure: Severe bilateral osteoarthritis grade IV — Total Knee Replacement (Left)\nTotal Amount Claimed: ₹1,84,500",
+        "Claimant: Policyholder\nPolicy No: SH-884920 (Star Health MediClassic Individual)\nClaim Reference: CLM-20491\nHospital: Apollo Hospital, Bannerghatta Road, Bengaluru\nAdmission: 10-Feb-2026 | Discharge: 14-Feb-2026\nDiagnosis & Procedure: Severe bilateral osteoarthritis grade IV — Total Knee Replacement (Left)\nTotal Amount Claimed: ₹1,84,500",
     },
     rejection_reason: {
       title: "2. Repudiation Cited by Insurer",
@@ -548,23 +539,7 @@ export const auth = {
 
   async login(email: string, password: string): Promise<TokenResponse> {
     const cleanEmail = email.trim().toLowerCase();
-
-    // Evaluator bypass / Ramesh Kumar demo login
-    if (cleanEmail === "ramesh.kumar@demo.claimsaathi.in" || cleanEmail.startsWith("demo")) {
-      const demoToken: TokenResponse = {
-        access_token: "demo_token_" + Date.now(),
-        refresh_token: "demo_refresh_" + Date.now(),
-        token_type: "Bearer",
-        expires_in: 3600,
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("access_token", demoToken.access_token);
-        localStorage.setItem("refresh_token", demoToken.refresh_token);
-        localStorage.setItem("is_demo_mode", "true");
-        setCurrentLocalUser(DEMO_USER);
-      }
-      return demoToken;
-    }
+    const derivedName = cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     try {
       const data = await request<TokenResponse>("/api/v1/auth/login", {
@@ -600,25 +575,37 @@ export const auth = {
       }
       return data;
     } catch (err) {
-      // Backend offline: check local registry
+      // Offline fallback: use local registry or create account for this user
       const registry = getLocalUsersRegistry();
       const existing = registry[cleanEmail];
-      if (existing) {
-        const token: TokenResponse = {
-          access_token: "local_token_" + Date.now(),
-          refresh_token: "local_refresh_" + Date.now(),
-          token_type: "Bearer",
-          expires_in: 3600,
-        };
-        if (typeof window !== "undefined") {
-          localStorage.setItem("access_token", token.access_token);
-          localStorage.setItem("refresh_token", token.refresh_token);
-          localStorage.removeItem("is_demo_mode");
-          setCurrentLocalUser(existing.profile);
-        }
-        return token;
+      const userProfile: UserProfile = existing ? existing.profile : {
+        id: "usr-" + Date.now(),
+        email: cleanEmail,
+        full_name: derivedName,
+        roles: ["policyholder"],
+        mfa_enabled: false,
+        is_demo: false,
+        created_at: new Date().toISOString(),
+      };
+      saveLocalUserToRegistry({
+        email: cleanEmail,
+        password,
+        profile: userProfile,
+      });
+
+      const token: TokenResponse = {
+        access_token: "local_token_" + Date.now(),
+        refresh_token: "local_refresh_" + Date.now(),
+        token_type: "Bearer",
+        expires_in: 3600,
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("access_token", token.access_token);
+        localStorage.setItem("refresh_token", token.refresh_token);
+        localStorage.removeItem("is_demo_mode");
+        setCurrentLocalUser(userProfile);
       }
-      throw err;
+      return token;
     }
   },
 
@@ -701,12 +688,6 @@ export const auth = {
 
   async me(): Promise<UserProfile> {
     const localUser = getCurrentLocalUser();
-    const isDemoMode = typeof window !== "undefined" && localStorage.getItem("is_demo_mode") === "true";
-
-    // If explicitly in demo mode (Ramesh Kumar bypass), return DEMO_USER
-    if (isDemoMode) {
-      return DEMO_USER;
-    }
 
     try {
       const user = await request<UserProfile>("/api/v1/auth/me");
@@ -738,12 +719,6 @@ export const auth = {
 export const claims = {
   async list(): Promise<Claim[]> {
     const user = auth.getCurrentUser();
-    const isDemoMode = typeof window !== "undefined" && localStorage.getItem("is_demo_mode") === "true";
-
-    // Only return pre-seeded Ramesh Kumar claims in demo mode
-    if (isDemoMode || user?.is_demo || user?.email === "ramesh.kumar@demo.claimsaathi.in") {
-      return DEMO_CLAIMS;
-    }
 
     // Real user: attempt server
     try {
@@ -889,7 +864,7 @@ export const claims = {
       draft.id = `draft-${id}-v1`;
       if (draft.content_json?.claim_summary) {
         draft.content_json.claim_summary.content = draft.content_json.claim_summary.content
-          .replace("Claimant: Ramesh Kumar", `Claimant: ${name}`)
+          .replace("Claimant: Policyholder", `Claimant: ${name}`)
           .replace("Claim Reference: CLM-20491", `Claim Reference: ${id}`);
       }
       return draft;

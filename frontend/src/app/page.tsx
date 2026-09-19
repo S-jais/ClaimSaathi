@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { auth, getHumanErrorMessage, subscribeColdStart } from "@/lib/api";
 import { MistralNavbar } from "@/components/MistralNavbar";
-import { PixelArrowRight, PixelCheck } from "@/components/PixelIcons";
+import { PixelArrowRight } from "@/components/PixelIcons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,13 +41,6 @@ export default function LoginPage() {
       setLoading(false);
       setIsColdStarting(false);
     }
-  }
-
-  function handleQuickDemo() {
-    setEmail("ramesh.kumar@demo.claimsaathi.in");
-    setPassword("DemoPass@2026!");
-    setMode("login");
-    setError(null);
   }
 
   return (
@@ -311,33 +304,6 @@ export default function LoginPage() {
                       </span>
                     </button>
                   </form>
-
-                  {/* 1-Click Demo Fill Shortcut */}
-                  <div
-                    style={{
-                      marginTop: "2rem",
-                      padding: "1.25rem",
-                      border: "1px solid var(--border-primary)",
-                      backgroundColor: "var(--surface-brand-secondary)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                      <span className="mistral-badge badge-demo">Instant Demo</span>
-                      <span className="text-eyebrow">Evaluator Bypass</span>
-                    </div>
-                    <p style={{ fontSize: "0.825rem", color: "var(--text-secondary)", marginBottom: "0.75rem", lineHeight: 1.5 }}>
-                      Test the end-to-end flow with pre-seeded Ramesh Kumar knee replacement claim (<strong style={{ color: "var(--text-primary)" }}>₹1,84,500</strong> under Star Health, repudiated under Clause 4.2).
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleQuickDemo}
-                      className="btn-mistral-outline"
-                      style={{ width: "100%", fontSize: "0.825rem", padding: "0.5rem 1rem" }}
-                      id="use-demo-creds-btn"
-                    >
-                      <PixelCheck size={14} /> Fill Demo Credentials & Sign In
-                    </button>
-                  </div>
                 </div>
 
                 {/* Regulatory Footnote */}

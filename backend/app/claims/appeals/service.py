@@ -25,7 +25,7 @@ def generate_default_content(claim: Claim) -> dict[str, Any]:
         "claim_summary": {
           "title": "1. Claim & Patient Summary",
           "content": (
-              f"Claimant: {claim.patient_name or 'Ramesh Kumar'}\n"
+              f"Claimant: {claim.patient_name or 'Policyholder'}\n"
               f"Policy No: SH-884920 (Star Health MediClassic Individual)\n"
               f"Claim Reference: {claim.claim_reference or 'CLM-20491'}\n"
               f"Hospital: {claim.hospital_name or 'Apollo Hospital, Bengaluru'}\n"

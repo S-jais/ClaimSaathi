@@ -115,15 +115,9 @@ export default function DashboardPage() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
                   <span className="text-eyebrow">{t("dashboard.workspace", "WORKSPACE / CLAIMS PORTFOLIO")}</span>
-                  {user?.is_demo ? (
-                    <span className="mistral-badge badge-demo" style={{ padding: "1px 6px" }}>
-                      {t("dashboard.demoAccount", "DEMO ACCOUNT")}
-                    </span>
-                  ) : (
-                    <span className="mistral-badge badge-ready" style={{ padding: "1px 6px" }}>
-                      ACTIVE ACCOUNT
-                    </span>
-                  )}
+                  <span className="mistral-badge badge-ready" style={{ padding: "1px 6px" }}>
+                    ACTIVE ACCOUNT
+                  </span>
                 </div>
                 <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>
                   {user?.full_name 
@@ -208,9 +202,7 @@ export default function DashboardPage() {
               <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("dashboard.statutoryProtection", "Statutory Protection")}</p>
               <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
                 <span className="font-mistral" style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--mistral-emerald)" }}>
-                  {claimList.length > 0 && user?.is_demo
-                    ? t("dashboard.monthsDuration", "78 Months").replace("{months}", "78")
-                    : "60-Month Cap"}
+                  60-Month Cap
                 </span>
                 <span className="mistral-badge badge-ready" style={{ fontSize: "0.65rem" }}>
                   {t("dashboard.moratoriumActive", "Moratorium Active")}
@@ -298,7 +290,7 @@ export default function DashboardPage() {
                         <span className="mistral-badge badge-danger">
                           <PixelAlert size={12} /> {t("dashboard.repudiatedBadge", "Repudiated (Clause 4.2)")}
                         </span>
-                        <span className="mistral-badge badge-demo">
+                        <span className="mistral-badge badge-ready">
                           {t("dashboard.coverageBadge", "78-Mo Coverage")}
                         </span>
                       </div>
