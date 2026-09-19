@@ -29,3 +29,4 @@ aiofiles>=23.2.0
 python-dateutil>=2.9.0
 orjson>=3.10.0
 python-dotenv>=1.0.0
+pypdf>=4.0.0

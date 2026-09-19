@@ -50,6 +50,7 @@ weasyprint = "^62.3"
 
 # File validation
 python-magic = "^0.4.27"
+pypdf = "^4.0.0"
 
 # Utilities
 structlog = "^24.2.0"

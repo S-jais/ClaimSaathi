@@ -13,9 +13,10 @@ import csv
 import io
 import re
 from decimal import Decimal, InvalidOperation
-from typing import Any
-
-from pypdf import PdfReader
+try:
+    from pypdf import PdfReader
+except ImportError:
+    PdfReader = None
 
 
 # ---------------------------------------------------------------------------
@@ -384,6 +385,15 @@ def parse_pdf_text(content: bytes) -> dict[str, Any]:
     Extracts text layer from a PDF file using pypdf.
     Returns page count, page-by-page text, and indicates if multimodal OCR is needed.
     """
+    if PdfReader is None:
+        return {
+            "num_pages": 1,
+            "total_text_len": 0,
+            "needs_multimodal_ocr": True,
+            "pages": [],
+            "combined_text": "",
+        }
+
     stream = io.BytesIO(content)
     try:
         reader = PdfReader(stream)
