@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/api";
 import { MistralNavbar } from "@/components/MistralNavbar";
-import { PixelLogo, PixelArrowRight, PixelCheck } from "@/components/PixelIcons";
+import { PixelArrowRight, PixelCheck } from "@/components/PixelIcons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,8 +58,6 @@ export default function LoginPage() {
             <div style={{ maxWidth: "860px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
                 <span className="text-eyebrow">Paytm AI Hackathon · Track 2</span>
-                <span style={{ color: "var(--border-secondary)" }}>/</span>
-                <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>IRDAI 2024 Master Circular Grounded</span>
               </div>
 
               <h1 className="text-display" style={{ marginBottom: "1.25rem" }}>
@@ -305,12 +303,11 @@ export default function LoginPage() {
 
           {/* Bottom Banner */}
           <div className="border-t-grid" style={{ padding: "1.25rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <PixelLogo size={18} />
-              <span className="text-eyebrow">ClaimSaathi Core Engine · Version 2026.1</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span className="text-eyebrow">Made with ❤️ by Team Static</span>
             </div>
             <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
-              Grounded in IRDAI Master Circular (5 Sept 2024)
+              September 19, 2026
             </span>
           </div>
         </div>
