@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: claimsaathi-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/chat/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: OCR_ADAPTER
+        value: mock
+      - key: CORS_ORIGINS
+        value: '["*"]'
