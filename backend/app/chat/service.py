@@ -79,7 +79,7 @@ async def _query_cognee(question: str, claim_id: str) -> str | None:
         return None
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=1.5) as client:
             resp = await client.post(
                 f"{cognee_url.rstrip('/')}/api/v1/recall",
                 headers={
@@ -126,21 +126,38 @@ def _sync_gemini_stream(client, model_name: str, messages: list[dict], question:
                 )
             )
 
-        chat = client.chats.create(
-            model=model_name,
-            config=new_genai.types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.3,
-                max_output_tokens=1024,
-            ),
-            history=history,
-        )
-        response = chat.send_message_stream(question)
-        chunks = []
-        for chunk in response:
-            if chunk.text:
-                chunks.append(chunk.text)
-        return "".join(chunks)
+        candidate_models = [model_name]
+        for fallback_m in ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"]:
+            if fallback_m not in candidate_models:
+                candidate_models.append(fallback_m)
+
+        last_error = None
+        for candidate in candidate_models:
+            try:
+                chat = client.chats.create(
+                    model=candidate,
+                    config=new_genai.types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.3,
+                        max_output_tokens=1024,
+                    ),
+                    history=history,
+                )
+                response = chat.send_message_stream(question)
+                chunks = []
+                for chunk in response:
+                    if chunk.text:
+                        chunks.append(chunk.text)
+                if chunks:
+                    return "".join(chunks)
+            except Exception as e:
+                last_error = e
+                logger.warning("gemini_model_failed_trying_next", model=candidate, error=str(e))
+                continue
+
+        if last_error:
+            raise last_error
+        return ""
 
     except (ImportError, AttributeError):
         # Fallback to old SDK
@@ -218,76 +235,116 @@ async def chat_stream(
 
 
 def _mock_chat_response(question: str) -> str:
-    """Smart deterministic fallback when no Gemini key configured."""
-    q = question.lower()
-    if "reject" in q or "clause 4" in q or "repudiat" in q or "why" in q:
+    """Smart deterministic fallback when LLM connection is delayed or offline."""
+    q = question.lower().strip()
+
+    # 1. Greetings & Conversational
+    if q in ["hi", "hello", "hey", "namaste", "good morning", "good afternoon", "good evening"] or q.startswith("hi ") or q.startswith("hello "):
         return (
-            "Your claim CLM-20491 was repudiated under **Clause 4.2** (24-month waiting period for joint replacement). "
-            "However, your policy has been continuously active for **78 months** since March 2018.\n\n"
-            "Under **IRDAI Master Circular 2024, Chapter V, Section 5.3** — after 60 continuous months of coverage, "
-            "no claim can be repudiated on waiting-period grounds. "
-            "This repudiation directly violates the statutory moratorium.\n\n"
-            "**Action:** File a formal grievance to the insurer's GRO citing the IRDAI 2024 moratorium.\n\n"
+            "Hello! I am your **ClaimSaathi Companion**, actively monitoring your health claim **CLM-20491**.\n\n"
+            "Here is your quick claim summary:\n"
+            "- **Procedure:** Total Knee Replacement (Apollo Hospital, Bengaluru)\n"
+            "- **Billed Amount:** ₹1,84,500 claimed (Hospital bill: ₹73,000 itemized)\n"
+            "- **Indicative Payable Estimate:** ₹61,200.00 (Subject to insurer assessment)\n"
+            "- **Current Issue:** Repudiated under Clause 4.2 despite 78 months continuous coverage (exceeds IRDAI 60-month moratorium).\n\n"
+            "How can I help you right now? You can ask me:\n"
+            "1. *'Explain my reimbursement calculation'*\n"
+            "2. *'What non-medical items were deducted?'*\n"
+            "3. *'Which documents are still missing?'*\n"
+            "4. *'How do I file an appeal with the GRO?'*\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
-    elif "moratorium" in q or "irdai" in q or "60" in q:
+
+    # 2. Status & Overview
+    if "status" in q or "update" in q or "what is happening" in q or "progress" in q:
         return (
-            "**IRDAI 60-Month Moratorium (Chapter V, Section 5.3):**\n\n"
-            "After 60 continuous months of health insurance coverage, insurers **cannot** repudiate claims on grounds of:\n"
-            "- Non-disclosure of pre-existing conditions\n"
-            "- Waiting period exclusions\n\n"
-            "Your policy has **78 months** of continuous coverage — exceeding this by 18 months. "
-            "The Clause 4.2 waiting period is legally inapplicable.\n\n"
+            "**Current Claim Status for CLM-20491:**\n\n"
+            "- **Insurance Status:** Repudiated by insurer (Star Health) on Feb 28, 2026 citing Clause 4.2.\n"
+            "- **ClaimSaathi Audit Score:** 85% Readiness.\n"
+            "- **Legal Protection:** Protected under IRDAI 2024 60-Month Moratorium (your policy is 78 months old).\n"
+            "- **Pending Item:** 1 document pending — *Indoor Case Papers (ICPs)* from Apollo Hospital MRD.\n"
+            "- **Next Step:** You can generate a formal grievance appeal letter directly from the **Appeal Builder** tab.\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
-    elif "document" in q or "missing" in q or "icp" in q:
-        return (
-            "**Missing document for CLM-20491:**\n\n"
-            "Only one gap: **Indoor Case Papers (ICPs) / OT Notes**\n\n"
-            "**Action:** Contact Apollo Hospital's Medical Records Department (MRD) and request "
-            "certified ICPs for admission Feb 10–14, 2026. All other 5 documents are verified.\n\n"
-            "---\n*AI guidance only. Final claim decision remains with the insurer.*"
-        )
-    elif "reimburse" in q or "calculat" in q or "waterfall" in q or "payable" in q or "estimate" in q:
+
+    # 3. Reimbursement, Settlement, and Waterfall Calculation
+    if any(term in q for term in ["reimburse", "calculat", "waterfall", "payable", "estimate", "how much", "money", "settle"]):
         return (
             "**Indicative Payable Estimate Breakdown:**\n\n"
-            "- **Gross Hospital Bill:** ₹73,000.00\n"
+            "- **Gross Hospital Bill:** ₹73,000.00 (8 itemized line items)\n"
             "- **Less: IRDAI Non-Payables:** -₹5,000.00 (Gloves, PPE, Registration & Bio-waste)\n"
-            "- **Less: Room Rent Adjustment:** ₹0.00 (Tariff within policy limits)\n"
+            "- **Less: Room Rent Adjustment:** ₹0.00 (Tariff within policy limit)\n"
             "- **Less: Policy Co-Payment (10%):** -₹6,800.00\n\n"
             "👉 **Indicative payable estimate — subject to your insurer's assessment:** **₹61,200.00**\n\n"
-            "*Note: Computed deterministically according to your policy terms and IRDAI 2024 guidelines.*\n\n"
+            "*Note: Computed deterministically according to your policy terms and IRDAI 2024 guidelines. Never accept arbitrary lump-sum deductions without itemized justification.*\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
-    elif "non-medical" in q or "consumable" in q or "deduct" in q or "glove" in q or "ppe" in q:
+
+    # 4. Non-Medical, Consumables & Deductions
+    if any(term in q for term in ["non-medical", "consumable", "deduct", "cut", "glove", "ppe", "registration", "waste", "sanitizer"]):
         return (
             "**Commonly Non-Payable Deductions (IRDAI Annexure I, List I):**\n\n"
-            "Under IRDAI standardization regulations, certain items are classified as hospital operational consumables:\n\n"
-            "1. **Gloves & PPE Kits (IRDAI-NP-001 & 002):** Routine personal protective gear for hospital staff is treated as institutional overhead unless bundled into a surgical package.\n"
-            "2. **Registration & MRD Fees (IRDAI-NP-004):** Administrative fees cannot be passed to insurance.\n"
-            "3. **Bio-Medical Waste Levy (IRDAI-NP-005):** Environmental statutory levies are hospital overheads.\n\n"
-            "**Patient Remedy:** If gloves or PPE were procedure-critical in an ICU or specialized OT, request the hospital billing desk for an itemized surgical certificate.\n\n"
+            "Under IRDAI standardization regulations, ₹5,000 was flagged as institutional consumables:\n\n"
+            "1. **Gloves & PPE Kits (IRDAI-NP-001 & 002 - ₹2,450):** Routine protective gear for hospital staff is treated as institutional overhead unless bundled into a surgical package.\n"
+            "2. **Registration & MRD Fees (IRDAI-NP-004 - ₹500):** Administrative record fees cannot be billed to insurance under IRDAI guidelines.\n"
+            "3. **Bio-Medical Waste Levy (IRDAI-NP-005 - ₹850):** Statutory waste disposal is an institutional overhead.\n"
+            "4. **Attendant Food & Misc (IRDAI-NP-006 & 007 - ₹1,200):** Personal comfort and visitor food are non-payable.\n\n"
+            "**Patient Remedy:** If gloves or PPE were procedure-critical in an ICU or specialized OT, request the hospital billing desk for an itemized surgical certificate to challenge the deduction.\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
-    elif "appeal" in q or "gro" in q or "ombudsman" in q:
+
+    # 5. Missing Documents & Verification Gates
+    if any(term in q for term in ["document", "missing", "paper", "upload", "icp", "stamp", "signature", "gate"]):
         return (
-            "**Your appeal path:**\n\n"
-            "1. **Day 1 →** File with Star Health's Grievance Redressal Officer (GRO), citing IRDAI 2024 Chapter V\n"
-            "2. **Attach** renewal receipts 2018–2026 proving 78 months continuous coverage\n"
-            "3. **Day 30 →** If no resolution, escalate to Insurance Ombudsman (Bengaluru) under Rule 17\n\n"
-            "Use the **Appeal Builder** tab to auto-generate your legally-grounded letter.\n\n"
+            "**Document Verification Status for CLM-20491:**\n\n"
+            "5 out of 6 standard admissibility gates are satisfied:\n"
+            "✅ **Discharge Summary:** Verified (Apollo Hospital, Bengaluru)\n"
+            "✅ **Hospital Bill:** Verified (₹73,000 itemized)\n"
+            "✅ **Policy Schedule:** Verified (#SH-884920, continuous since March 2018)\n"
+            "✅ **Doctor Prescription:** Verified\n"
+            "✅ **Claim Form:** Verified and signed\n"
+            "❌ **Pending Document:** **Indoor Case Papers (ICPs) / OT Notes**\n\n"
+            "**Action:** Contact Apollo Hospital Medical Records Department (MRD) to request stamped Indoor Case Papers for admission Feb 10–14, 2026.\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
-    else:
+
+    # 6. Rejection, Repudiation, and Clause 4.2
+    if any(term in q for term in ["reject", "repudiat", "clause 4", "denied", "why"]):
         return (
-            "I'm your **ClaimSaathi AI Companion**, scoped to claim CLM-20491.\n\n"
-            "I can help with:\n"
-            "- Why your claim was rejected and your legal rights\n"
-            "- The IRDAI 60-month moratorium\n"
-            "- Missing documents and how to get them\n"
-            "- Filing an appeal with the GRO or Ombudsman\n\n"
+            "**Why Your Claim Was Rejected (and Why the Insurer is Wrong):**\n\n"
+            "Star Health repudiated claim CLM-20491 citing **Clause 4.2** (24-month waiting period for joint replacement surgery).\n\n"
+            "**Why this is legally invalid:**\n"
+            "Under **IRDAI Master Circular on Protection of Policyholders' Interests 2024, Chapter V, Section 5.3**, "
+            "all health policies have a statutory **60-Month Moratorium Period**. Once a policy is continuously renewed for 60 months, "
+            "the insurer **cannot repudiate any claim** on grounds of pre-existing diseases or waiting period exclusions (except proven fraud).\n\n"
+            "Your policy has **78 months of continuous coverage** (since 12 March 2018). Clause 4.2 cannot legally be applied.\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
+
+    # 7. Appeals & Legal Redressal
+    if any(term in q for term in ["appeal", "gro", "ombudsman", "grievance", "complaint", "legal"]):
+        return (
+            "**Your 2-Step Appeal Roadmap:**\n\n"
+            "1. **Step 1 — Formal Grievance to Insurer GRO (Day 1):**\n"
+            "   Submit a formal appeal citing IRDAI Master Circular 2024 (Chapter V, Section 5.3 - 60-Month Moratorium) and attach your renewal history (2018–2026). Use our **Appeal Builder** to generate this ready-to-sign letter.\n\n"
+            "2. **Step 2 — Insurance Ombudsman Escalation (Day 30):**\n"
+            "   If Star Health does not reverse the repudiation or fails to respond within 30 days, file an appeal under Rule 17 of the Insurance Ombudsman Rules 2017 with the Ombudsman Office in Bengaluru.\n\n"
+            "---\n*AI guidance only. Final claim decision remains with the insurer.*"
+        )
+
+    # 8. Context-Aware Default Response
+    return (
+        f"Regarding your query on claim **CLM-20491**:\n\n"
+        f"Your active case involves a Total Knee Replacement at Apollo Hospital (Billed: ₹73,000, Indicative Payable: ₹61,200.00). "
+        f"The claim was repudiated under Clause 4.2, which directly contradicts the IRDAI 2024 60-month moratorium rule because your policy has 78 months continuous tenure.\n\n"
+        f"I can specifically help you:\n"
+        f"- Understand the **reimbursement calculation** & non-payable deductions\n"
+        f"- Review **missing documents** (such as Indoor Case Papers)\n"
+        f"- Draft an **appeal letter** for the Grievance Redressal Officer (GRO)\n\n"
+        f"Please ask any question about your claim, deductions, or appeal rights!\n\n"
+        f"---\n*AI guidance only. Final claim decision remains with the insurer.*"
+    )
+
 
 
 async def chat_once(

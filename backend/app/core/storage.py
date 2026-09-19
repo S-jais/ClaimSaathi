@@ -192,3 +192,7 @@ def storage() -> MinioStorageAdapter:
     if _storage is None:
         _storage = get_storage_adapter()
     return _storage
+
+
+get_storage = storage
+

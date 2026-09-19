@@ -1233,22 +1233,49 @@ export const chat = {
 };
 
 function _mockChatFallback(question: string): string {
-  const q = question.toLowerCase();
-  if (q.includes("reject") || q.includes("clause 4") || q.includes("repudiat")) {
+  const q = question.toLowerCase().trim();
+
+  // 1. Greetings
+  if (q in ["hi", "hello", "hey", "namaste", "good morning", "good afternoon"] || q.startsWith("hi ") || q.startsWith("hello ")) {
+    return "Hello! I am your **ClaimSaathi Companion**, actively monitoring claim **CLM-20491**.\n\n" +
+      "Here is your active case summary:\n" +
+      "- **Treatment:** Total Knee Replacement at Apollo Hospital\n" +
+      "- **Billed:** ₹73,000 | **Indicative Payable:** ₹61,200.00\n" +
+      "- **Status:** Repudiated under Clause 4.2 (contestable under IRDAI 60-month moratorium)\n\n" +
+      "Ask me anything! For example: *'Explain my reimbursement calculation'*, *'What non-medical items were deducted?'*, or *'How do I file an appeal?'*";
+  }
+
+  // 2. Status
+  if (q.includes("status") || q.includes("update") || q.includes("progress")) {
+    return "**Claim CLM-20491 Status:**\n\n- **Insurer Decision:** Repudiated citing 24-month waiting period\n- **Audit Readiness:** 85% complete (5 of 6 gates satisfied)\n- **Pending:** Indoor Case Papers (ICPs) from Apollo MRD\n- **Defense:** Policy has 78 months unbroken continuity, making repudiation invalid under IRDAI Chapter V.";
+  }
+
+  // 3. Rejection & Moratorium
+  if (q.includes("reject") || q.includes("clause 4") || q.includes("repudiat") || q.includes("why")) {
     return "Your claim was repudiated under **Clause 4.2** (24-month waiting period). However, your policy is **78 months old** — exceeding the IRDAI 2024 statutory 60-month moratorium. This repudiation is legally contestable. File a formal grievance with the insurer's GRO citing IRDAI Master Circular 2024, Chapter V, Section 5.3.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
-  if (q.includes("document") || q.includes("missing") || q.includes("icp")) {
+
+  // 4. Missing Documents
+  if (q.includes("document") || q.includes("missing") || q.includes("icp") || q.includes("paper")) {
     return "The only missing document is your **Indoor Case Papers (ICPs)**. Request them from Apollo Hospital's Medical Records Department (MRD) for admission Feb 10-14, 2026. All other 5 documents are verified.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
-  if (q.includes("reimburse") || q.includes("calculat") || q.includes("waterfall") || q.includes("payable") || q.includes("estimate")) {
+
+  // 5. Reimbursement & Calculation
+  if (q.includes("reimburse") || q.includes("calculat") || q.includes("waterfall") || q.includes("payable") || q.includes("estimate") || q.includes("how much") || q.includes("money")) {
     return "**Indicative Payable Estimate Breakdown:**\n\n- **Gross Hospital Bill:** ₹73,000.00\n- **Less: IRDAI Non-Payables:** -₹5,000.00 (Gloves, PPE, Registration & Bio-waste)\n- **Less: Room Rent Adjustment:** ₹0.00 (Tariff within limits)\n- **Less: Policy Co-Payment (10%):** -₹6,800.00\n\n👉 **Indicative payable estimate — subject to your insurer's assessment:** **₹61,200.00**\n\n*Note: Computed deterministically according to your policy terms and IRDAI 2024 guidelines.*\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
-  if (q.includes("non-medical") || q.includes("consumable") || q.includes("deduct") || q.includes("glove") || q.includes("ppe")) {
+
+  // 6. Non-Medical Consumables
+  if (q.includes("non-medical") || q.includes("consumable") || q.includes("deduct") || q.includes("glove") || q.includes("ppe") || q.includes("registration")) {
     return "**Commonly Non-Payable Deductions (IRDAI Annexure I, List I):**\n\nUnder IRDAI standardization regulations, routine consumables are non-admissible:\n\n1. **Gloves & PPE Kits:** Routine protective gear is hospital overhead unless bundled into surgical packages.\n2. **Registration & MRD Fees:** Hospital administration charges are non-payable.\n3. **Bio-Medical Waste:** Statutory environmental levies cannot be billed to insurance.\n\n**Patient Remedy:** Ask your hospital billing desk for a surgical certificate confirming gloves or PPE were procedure-critical in the ICU/OT.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
-  if (q.includes("appeal") || q.includes("gro") || q.includes("ombudsman")) {
+
+  // 7. Appeal & Ombudsman
+  if (q.includes("appeal") || q.includes("gro") || q.includes("ombudsman") || q.includes("grievance")) {
     return "**Appeal path:** 1) Send appeal letter to Star Health GRO, 2) Attach renewal receipts 2018-2026, 3) If no response in 30 days → Insurance Ombudsman (Bengaluru) under Rule 17. Use the Appeal Builder tab to generate your letter.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
-  return "I'm your ClaimSaathi AI companion. Ask me about your claim rejection, missing documents, bill audit deductions, or how to file an appeal.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+
+  // 8. Dynamic Fallback
+  return `Regarding your question on claim CLM-20491: Your Total Knee Replacement claim (₹73,000 billed, ₹61,200 indicative payable) is currently repudiated under Clause 4.2, which is contestable under the IRDAI 60-month moratorium rule.\n\nAsk me specifically about your bill deductions, missing Indoor Case Papers, or how to generate your GRO appeal letter!`;
 }
 
