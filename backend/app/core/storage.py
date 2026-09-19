@@ -150,7 +150,8 @@ class MinioStorageAdapter:
 
     async def health_check(self) -> bool:
         try:
-            self._client.list_buckets()
+            import asyncio
+            await asyncio.to_thread(self._client.list_buckets)
             return True
         except Exception:
             return False

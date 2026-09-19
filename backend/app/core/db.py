@@ -27,6 +27,7 @@ engine = create_async_engine(
     pool_pre_ping=True,       # detect stale connections
     pool_size=10,
     max_overflow=20,
+    connect_args={"timeout": 3, "command_timeout": 5},
     echo=not settings.is_production,  # log SQL only in dev
 )
 

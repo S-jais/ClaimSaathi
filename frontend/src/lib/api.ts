@@ -4,7 +4,105 @@
  * and resilient demo-mode fallback for seamless evaluation.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+/**
+ * Resolves the base URL for API requests.
+ * In browser environment, defaults to "" (same-origin Next.js reverse proxy).
+ * Can be explicitly overridden with NEXT_PUBLIC_API_BASE_URL if direct cross-origin is needed.
+ */
+export function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    // In browser, use same-origin relative URL by default to leverage Next.js rewrites proxy
+    if (process.env.NEXT_PUBLIC_FORCE_DIRECT_API !== "true") {
+      return "";
+    }
+  }
+  const raw =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.BACKEND_URL ||
+    "http://localhost:8000";
+  return raw.trim().replace(/\/+$/, "");
+}
+
+export const API_BASE = getApiBase();
+
+export const DEFAULT_TIMEOUT_MS = 15000; // 15 seconds
+
+// Cold-start notification state and listeners
+type ColdStartListener = (isColdStarting: boolean) => void;
+const coldStartListeners = new Set<ColdStartListener>();
+
+export function subscribeColdStart(listener: ColdStartListener): () => void {
+  coldStartListeners.add(listener);
+  return () => coldStartListeners.delete(listener);
+}
+
+function notifyColdStart(isStarting: boolean): void {
+  coldStartListeners.forEach((fn) => fn(isStarting));
+}
+
+// Single-flight token refresh lock
+let refreshPromise: Promise<string | null> | null = null;
+
+async function executeTokenRefresh(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+  refreshPromise = (async () => {
+    try {
+      if (typeof window === "undefined") return null;
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) return null;
+
+      const res = await fetch(`${getApiBase()}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!res.ok) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        return null;
+      }
+
+      const data = await res.json();
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        if (data.refresh_token) {
+          localStorage.setItem("refresh_token", data.refresh_token);
+        }
+        return data.access_token;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
+export function getHumanErrorMessage(err: unknown): string {
+  if (err instanceof ClaimSaathiApiError) {
+    if (err.status === 401) return "Email or password is incorrect.";
+    if (err.status === 409) return "An account with this email already exists. Try signing in.";
+    if (err.status === 422) return err.error.detail || "One or more fields are invalid.";
+    if (err.status === 429) return "Too many attempts. Please wait a minute and try again.";
+    if (err.status >= 500) {
+      return "We couldn't reach ClaimSaathi right now. The server may be warming up. Please try again in a moment.";
+    }
+    return err.error.detail || "An unexpected error occurred.";
+  }
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+    if (msg.includes("failed to fetch") || msg.includes("abort") || msg.includes("network") || msg.includes("timeout")) {
+      return "We couldn't reach ClaimSaathi right now. The server may be starting up (cold start). Please try again in a moment.";
+    }
+    return err.message;
+  }
+  return "We couldn't reach ClaimSaathi right now. Please try again in a moment.";
+}
 
 export interface ApiError {
   type: string;
@@ -30,26 +128,79 @@ function getAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const correlationId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "req-" + Date.now();
+interface RequestOptions extends RequestInit {
+  timeoutMs?: number;
+  retries?: number;
+  skipAuthRefresh?: boolean;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    retries = 1,
+    skipAuthRefresh = false,
+    ...fetchOptions
+  } = options;
+
+  const correlationId =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "req-" + Date.now();
+
+  const baseUrl = getApiBase();
+  const url = `${baseUrl}${path}`;
+
+  // Notify cold-start warning timer after 2.5s
+  let coldStartNotified = false;
+  const coldStartTimer = setTimeout(() => {
+    coldStartNotified = true;
+    notifyColdStart(true);
+  }, 2500);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+  const timeoutTimer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      ...options,
+    const res = await fetch(url, {
+      ...fetchOptions,
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "X-Correlation-ID": correlationId,
         ...getAuthHeader(),
-        ...options.headers,
+        ...fetchOptions.headers,
       },
     });
-    clearTimeout(timeoutId);
+
+    clearTimeout(timeoutTimer);
+    clearTimeout(coldStartTimer);
+    if (coldStartNotified) notifyColdStart(false);
+
+    // Auto token refresh on 401 with single-flight lock
+    if (
+      res.status === 401 &&
+      !skipAuthRefresh &&
+      !path.includes("/auth/login") &&
+      !path.includes("/auth/register") &&
+      !path.includes("/auth/refresh")
+    ) {
+      const newAccessToken = await executeTokenRefresh();
+      if (newAccessToken) {
+        return request<T>(path, { ...options, skipAuthRefresh: true });
+      }
+    }
 
     if (!res.ok) {
+      // Retry once on 502/503/504 for idempotent calls
+      const isIdempotent =
+        !fetchOptions.method ||
+        fetchOptions.method === "GET" ||
+        fetchOptions.method === "HEAD";
+      if (retries > 0 && isIdempotent && [502, 503, 504].includes(res.status)) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return request<T>(path, { ...options, retries: retries - 1 });
+      }
+
       let error: ApiError;
       try {
         error = await res.json();
@@ -68,7 +219,20 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (res.status === 204) return undefined as T;
     return res.json() as Promise<T>;
   } catch (err) {
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutTimer);
+    clearTimeout(coldStartTimer);
+    if (coldStartNotified) notifyColdStart(false);
+
+    // Retry once on network/abort error for idempotent calls
+    const isIdempotent =
+      !fetchOptions.method ||
+      fetchOptions.method === "GET" ||
+      fetchOptions.method === "HEAD";
+    if (retries > 0 && isIdempotent) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return request<T>(path, { ...options, retries: retries - 1 });
+    }
+
     throw err;
   }
 }

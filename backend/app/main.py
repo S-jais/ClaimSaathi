@@ -9,6 +9,7 @@ from __future__ import annotations
 from dotenv import load_dotenv
 load_dotenv()
 
+import asyncio
 import redis.asyncio as aioredis
 from contextlib import asynccontextmanager
 from typing import Any
@@ -121,6 +122,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/readiness", tags=["ops"], include_in_schema=False)
+    @app.get("/ready", tags=["ops"], include_in_schema=False)
     async def readiness() -> dict[str, Any]:
         """
         Deep readiness check. Returns 503 if any critical dependency is down.
@@ -129,18 +131,30 @@ def create_app() -> FastAPI:
         from fastapi import status as http_status
         from fastapi.responses import JSONResponse
 
-        db_ok = await check_db_connection()
-        storage_ok = await storage().health_check()
+        async def _safe_db() -> bool:
+            try:
+                return await asyncio.wait_for(check_db_connection(), timeout=2.0)
+            except Exception:
+                return False
 
-        # Redis check
-        redis_ok = False
-        try:
-            r = aioredis.from_url(settings.REDIS_URL)
-            await r.ping()
-            await r.aclose()
-            redis_ok = True
-        except Exception:
-            pass
+        async def _safe_storage() -> bool:
+            try:
+                return await asyncio.wait_for(storage().health_check(), timeout=2.0)
+            except Exception:
+                return False
+
+        async def _safe_redis() -> bool:
+            try:
+                r = aioredis.from_url(settings.REDIS_URL)
+                await asyncio.wait_for(r.ping(), timeout=2.0)
+                await r.aclose()
+                return True
+            except Exception:
+                return False
+
+        db_ok, storage_ok, redis_ok = await asyncio.gather(
+            _safe_db(), _safe_storage(), _safe_redis()
+        )
 
         result = {
             "status": "ready" if (db_ok and storage_ok and redis_ok) else "not_ready",

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/api";
+import { auth, getHumanErrorMessage, subscribeColdStart } from "@/lib/api";
 import { MistralNavbar } from "@/components/MistralNavbar";
 import { PixelArrowRight, PixelCheck } from "@/components/PixelIcons";
 
@@ -13,10 +13,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isColdStarting, setIsColdStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    return subscribeColdStart((status) => {
+      setIsColdStarting(status);
+    });
+  }, []);
+
+  async function handleSubmit(e?: FormEvent) {
+    if (e) e.preventDefault();
     setLoading(true);
     setError(null);
 
@@ -28,10 +35,11 @@ export default function LoginPage() {
       }
       router.push("/dashboard");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Authentication failed. Please verify credentials.";
+      const msg = getHumanErrorMessage(err);
       setError(msg);
     } finally {
       setLoading(false);
+      setIsColdStarting(false);
     }
   }
 
@@ -224,6 +232,26 @@ export default function LoginPage() {
                       />
                     </div>
 
+                    {isColdStarting && !error && (
+                      <div
+                        style={{
+                          padding: "0.75rem 1rem",
+                          backgroundColor: "rgba(255, 130, 4, 0.12)",
+                          border: "1px solid rgba(255, 130, 4, 0.35)",
+                          color: "var(--mistral-flame)",
+                          fontSize: "0.825rem",
+                          borderRadius: "3px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        <span style={{ fontSize: "1rem" }}>⏳</span>
+                        <span>Waking up the server… this can take up to a minute on cold start.</span>
+                      </div>
+                    )}
+
                     {error && (
                       <div
                         style={{
@@ -233,9 +261,30 @@ export default function LoginPage() {
                           color: "var(--status-danger-text)",
                           fontSize: "0.85rem",
                           borderRadius: "3px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          lineHeight: 1.4,
                         }}
                       >
-                        {error}
+                        <span>{error}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleSubmit()}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--status-danger-border)",
+                            color: "var(--status-danger-text)",
+                            borderRadius: "3px",
+                            padding: "2px 8px",
+                            fontSize: "0.75rem",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Retry
+                        </button>
                       </div>
                     )}
 
