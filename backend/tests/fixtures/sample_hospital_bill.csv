@@ -1,0 +1,12 @@
+Item Description,Category,Quantity,Rate,Amount
+Room Rent (Deluxe Room 4 Days),Room & Nursing,4,6000.00,24000.00
+Operation Theatre Charges,Surgical,1,35000.00,35000.00
+Surgeon & Specialist Consultation Fee,Professional Fees,1,45000.00,45000.00
+Anesthesia Administration Fee,Professional Fees,1,15000.00,15000.00
+Knee Prosthesis Implant (High Flex Titanium),Implant & Device,1,42000.00,42000.00
+IV Antibiotics & Infusion Fluids,Pharmacy,1,11500.00,11500.00
+Sterile Surgical Gloves & Gowns,Consumables,1,4200.00,4200.00
+Patient Admission Hygiene Kit,Consumables,1,2800.00,2800.00
+Biomedical Waste Disposal Charges,Administrative,1,1500.00,1500.00
+Pre-Operative ECG & X-Ray Bilateral,Diagnostics,1,3500.00,3500.00
+Total Gross Billed Amount,Summary,1,184500.00,184500.00

@@ -68,3 +68,19 @@ class DocumentExtraction(Base):
     updated_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     document: Mapped[Document] = relationship("Document", back_populates="extractions")
+
+
+class AnalysisJob(Base):
+    __tablename__ = "analysis_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    status: Mapped[str] = mapped_column(sa.String(30), nullable=False, default="QUEUED")  # QUEUED, READING, CLASSIFYING, VERIFYING, AUDITING, COMPLETED, FAILED
+    stage: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
+    progress_pct: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    timings_ms: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+

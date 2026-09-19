@@ -248,6 +248,27 @@ def _mock_chat_response(question: str) -> str:
             "certified ICPs for admission Feb 10–14, 2026. All other 5 documents are verified.\n\n"
             "---\n*AI guidance only. Final claim decision remains with the insurer.*"
         )
+    elif "reimburse" in q or "calculat" in q or "waterfall" in q or "payable" in q or "estimate" in q:
+        return (
+            "**Indicative Payable Estimate Breakdown:**\n\n"
+            "- **Gross Hospital Bill:** ₹73,000.00\n"
+            "- **Less: IRDAI Non-Payables:** -₹5,000.00 (Gloves, PPE, Registration & Bio-waste)\n"
+            "- **Less: Room Rent Adjustment:** ₹0.00 (Tariff within policy limits)\n"
+            "- **Less: Policy Co-Payment (10%):** -₹6,800.00\n\n"
+            "👉 **Indicative payable estimate — subject to your insurer's assessment:** **₹61,200.00**\n\n"
+            "*Note: Computed deterministically according to your policy terms and IRDAI 2024 guidelines.*\n\n"
+            "---\n*AI guidance only. Final claim decision remains with the insurer.*"
+        )
+    elif "non-medical" in q or "consumable" in q or "deduct" in q or "glove" in q or "ppe" in q:
+        return (
+            "**Commonly Non-Payable Deductions (IRDAI Annexure I, List I):**\n\n"
+            "Under IRDAI standardization regulations, certain items are classified as hospital operational consumables:\n\n"
+            "1. **Gloves & PPE Kits (IRDAI-NP-001 & 002):** Routine personal protective gear for hospital staff is treated as institutional overhead unless bundled into a surgical package.\n"
+            "2. **Registration & MRD Fees (IRDAI-NP-004):** Administrative fees cannot be passed to insurance.\n"
+            "3. **Bio-Medical Waste Levy (IRDAI-NP-005):** Environmental statutory levies are hospital overheads.\n\n"
+            "**Patient Remedy:** If gloves or PPE were procedure-critical in an ICU or specialized OT, request the hospital billing desk for an itemized surgical certificate.\n\n"
+            "---\n*AI guidance only. Final claim decision remains with the insurer.*"
+        )
     elif "appeal" in q or "gro" in q or "ombudsman" in q:
         return (
             "**Your appeal path:**\n\n"

@@ -21,8 +21,11 @@ from app.claims.schemas import (
     AppealDraftResponse,
     AppealDraftUpdate,
     ClaimEventResponse,
+    BillAuditResponse,
+    BillAuditRequest,
 )
 from app.claims.readiness.service import run_readiness_check
+from app.claims.audit.service import audit_claim_bill
 from app.claims.rejection.service import analyze_rejection
 from app.claims.appeals.service import (
     get_or_create_draft,
@@ -122,6 +125,22 @@ async def check_claim_readiness(
         return await run_readiness_check(db, claim_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+# --- Bill Audit Engine ---
+@router.post("/{claim_id}/bill-audit", response_model=BillAuditResponse)
+@router.get("/{claim_id}/bill-audit", response_model=BillAuditResponse)
+async def audit_claim_bill_endpoint(
+    claim_id: uuid.UUID,
+    request: BillAuditRequest | None = None,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    try:
+        return await audit_claim_bill(db, claim_id, request=request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 
 
 # --- Rejection Decoder ---

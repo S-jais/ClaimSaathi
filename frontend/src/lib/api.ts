@@ -277,6 +277,12 @@ export interface RequirementResult {
   is_satisfied: boolean;
   satisfied_by_document_id: string | null;
   gap_reason: string | null;
+  status?: "MISSING" | "RECEIVED_UNVERIFIED" | "VERIFIED" | "NEEDS_FIX";
+  document_id?: string | null;
+  filename?: string | null;
+  confidence?: number;
+  issues?: string[];
+  remedies?: string[];
 }
 
 export interface ReadinessResult {
@@ -286,7 +292,71 @@ export interface ReadinessResult {
   requirements: RequirementResult[];
   flags: string[];
   missing_mandatory: string[];
+  needs_fix_mandatory?: string[];
+  cross_doc_checks?: Array<{
+    check_name: string;
+    is_passed: boolean;
+    severity: "ERROR" | "WARNING" | "INFO";
+    message: string;
+    remedy?: string | null;
+  }>;
   ai_explanation_status?: string;
+}
+
+export interface AuditedLineItem {
+  item_id: string;
+  description: string;
+  amount_paise: number;
+  classification: "PAYABLE_MEDICAL" | "COMMONLY_NON_PAYABLE" | "NEEDS_REVIEW";
+  category?: string | null;
+  rule_id?: string | null;
+  guideline_reference?: string | null;
+  explanation?: string | null;
+  patient_remedy?: string | null;
+}
+
+export interface WaterfallStep {
+  step_key: string;
+  label: string;
+  amount_paise: number;
+  status: "APPLIED" | "NOT_APPLICABLE" | "UNKNOWN";
+  notes?: string | null;
+}
+
+export interface BillAuditReport {
+  rules_version: string;
+  gross_billed_paise: number;
+  commonly_non_payable_paise: number;
+  needs_review_paise: number;
+  payable_medical_paise: number;
+  room_rent_deduction_paise: number;
+  room_rent_status: "APPLIED" | "NOT_APPLICABLE" | "UNKNOWN";
+  copay_deduction_paise: number;
+  copay_status: "APPLIED" | "NOT_APPLICABLE" | "UNKNOWN";
+  indicative_payable_paise: number;
+  estimate_label: string;
+  waterfall: WaterfallStep[];
+  items: AuditedLineItem[];
+  non_payable_count: number;
+  needs_review_count: number;
+  payable_medical_count: number;
+}
+
+export interface DocumentUploadResponse {
+  document_id: string;
+  job_id: string;
+  status: string;
+  stage: string;
+  message: string;
+}
+
+export interface AnalysisJobStatus {
+  job_id: string;
+  document_id: string;
+  status: string;
+  stage?: string | null;
+  progress_pct: number;
+  error_message?: string | null;
 }
 
 export interface RejectionResult {
@@ -410,6 +480,138 @@ const DEMO_READINESS: ReadinessResult = {
   ],
   missing_mandatory: ["indoor_case_papers"],
   ai_explanation_status: "available",
+};
+
+export const DEMO_BILL_AUDIT: BillAuditReport = {
+  rules_version: "2024.1",
+  gross_billed_paise: 7300000,
+  commonly_non_payable_paise: 500000,
+  needs_review_paise: 300000,
+  payable_medical_paise: 6500000,
+  room_rent_deduction_paise: 0,
+  room_rent_status: "NOT_APPLICABLE",
+  copay_deduction_paise: 680000,
+  copay_status: "APPLIED",
+  indicative_payable_paise: 6120000,
+  estimate_label: "Indicative payable estimate — subject to your insurer's assessment",
+  non_payable_count: 4,
+  needs_review_count: 1,
+  payable_medical_count: 3,
+  waterfall: [
+    {
+      step_key: "gross_billed",
+      label: "Gross Hospital Bill Amount",
+      amount_paise: 7300000,
+      status: "APPLIED",
+      notes: "Total 8 line items analyzed from Apollo bill breakdown.",
+    },
+    {
+      step_key: "non_payable_deductions",
+      label: "Less: Commonly Non-Payable Items (IRDAI Exclusions)",
+      amount_paise: 500000,
+      status: "APPLIED",
+      notes: "Consumables, PPE kits, registration fees, and bio-waste levies per IRDAI List I.",
+    },
+    {
+      step_key: "room_rent_adjustment",
+      label: "Less: Room Rent Proportionate Adjustment",
+      amount_paise: 0,
+      status: "NOT_APPLICABLE",
+      notes: "Room tariff is within policy sub-limits; no proportionate penalty applied.",
+    },
+    {
+      step_key: "copay_deduction",
+      label: "Less: Policy Co-Payment (10%)",
+      amount_paise: 680000,
+      status: "APPLIED",
+      notes: "10% co-pay applied per policy terms.",
+    },
+    {
+      step_key: "indicative_payable_estimate",
+      label: "Indicative payable estimate — subject to your insurer's assessment",
+      amount_paise: 6120000,
+      status: "APPLIED",
+      notes: "Subject to final verification of original physical documents and medical officer review.",
+    },
+  ],
+  items: [
+    {
+      item_id: "ITEM-001",
+      description: "OT Surgeon Professional Charges",
+      amount_paise: 4500000,
+      classification: "PAYABLE_MEDICAL",
+      category: "Surgeon Fee",
+      explanation: "Standard admissible surgical procedure fee.",
+    },
+    {
+      item_id: "ITEM-002",
+      description: "Anesthetist Charges",
+      amount_paise: 1500000,
+      classification: "PAYABLE_MEDICAL",
+      category: "Doctor Fee",
+      explanation: "Standard admissible specialist consultation.",
+    },
+    {
+      item_id: "ITEM-003",
+      description: "Sterile Nitrile Examination Gloves (10 prs)",
+      amount_paise: 65000,
+      classification: "COMMONLY_NON_PAYABLE",
+      category: "Consumables & PPE",
+      rule_id: "IRDAI-NP-001",
+      guideline_reference: "IRDAI List I - Item 1 (Gloves)",
+      explanation: "Under IRDAI standardization guidelines, routine surgical and examination gloves are classified as non-payable consumables.",
+      patient_remedy: "Ask hospital billing desk for a surgical package itemization confirming procedure criticality.",
+    },
+    {
+      item_id: "ITEM-004",
+      description: "Staff COVID PPE Kit + Face Shields",
+      amount_paise: 180000,
+      classification: "COMMONLY_NON_PAYABLE",
+      category: "Consumables & PPE",
+      rule_id: "IRDAI-NP-002",
+      guideline_reference: "IRDAI List I - Item 2 (PPE & Protective Gear)",
+      explanation: "Personal protective apparel is treated as hospital overhead consumables.",
+      patient_remedy: "If admission was in an isolated infectious disease ward, obtain an ICU barrier nursing justification letter.",
+    },
+    {
+      item_id: "ITEM-005",
+      description: "Patient Registration & MRD Record Fee",
+      amount_paise: 50000,
+      classification: "COMMONLY_NON_PAYABLE",
+      category: "Administrative & Record Charges",
+      rule_id: "IRDAI-NP-004",
+      guideline_reference: "IRDAI List I - Item 7 (Registration & Admission Fees)",
+      explanation: "Administrative fees for patient registration and medical records cannot be passed to insurance claims.",
+    },
+    {
+      item_id: "ITEM-006",
+      description: "Hospital Bio-Medical Waste Management Surcharge",
+      amount_paise: 85000,
+      classification: "COMMONLY_NON_PAYABLE",
+      category: "Bio-Medical Waste & Infrastructure",
+      rule_id: "IRDAI-NP-005",
+      guideline_reference: "IRDAI List I - Item 11 (Waste Management)",
+      explanation: "Hospital bio-medical waste compliance is an institutional overhead.",
+    },
+    {
+      item_id: "ITEM-007",
+      description: "Miscellaneous Consumables & Admin Charges",
+      amount_paise: 300000,
+      classification: "NEEDS_REVIEW",
+      category: "Ambiguous / Unspecified",
+      rule_id: "REVIEW-AMBIGUOUS",
+      explanation: "The description is generic. Insurers require an itemized breakdown before adjudicating payment.",
+      patient_remedy: "Request an itemized breakdown from the hospital billing counter.",
+    },
+    {
+      item_id: "ITEM-008",
+      description: "Inj. Pantoprazole 40mg IV",
+      amount_paise: 620000,
+      classification: "PAYABLE_MEDICAL",
+      category: "Pharmacy",
+      explanation: "Standard admissible inpatient medication.",
+    },
+  ],
 };
 
 const DEMO_REJECTION: RejectionResult = {
@@ -880,6 +1082,53 @@ export const claims = {
       return demoDraftState;
     }
   },
+
+  async getBillAudit(id: string): Promise<BillAuditReport> {
+    try {
+      return await request<BillAuditReport>(`/api/v1/claims/${id}/bill-audit`);
+    } catch {
+      return DEMO_BILL_AUDIT;
+    }
+  },
+
+  async postBillAudit(id: string, payload?: any): Promise<BillAuditReport> {
+    try {
+      return await request<BillAuditReport>(`/api/v1/claims/${id}/bill-audit`, {
+        method: "POST",
+        body: JSON.stringify(payload || {}),
+      });
+    } catch {
+      return DEMO_BILL_AUDIT;
+    }
+  },
+};
+
+export const documents = {
+  async upload(file: File, docType: string = "other", claimId?: string): Promise<DocumentUploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("doc_type", docType);
+    if (claimId) {
+      formData.append("claim_id", claimId);
+    }
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    const res = await fetch(`${getApiBase()}/api/v1/documents/upload`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Upload failed" }));
+      throw new Error(err.detail || "Failed to upload document");
+    }
+    return await res.json();
+  },
+
+  async getJob(documentId: string): Promise<AnalysisJobStatus> {
+    return await request<AnalysisJobStatus>(`/api/v1/documents/${documentId}/job`);
+  },
 };
 
 // --- Chat / AI Companion ---
@@ -991,9 +1240,15 @@ function _mockChatFallback(question: string): string {
   if (q.includes("document") || q.includes("missing") || q.includes("icp")) {
     return "The only missing document is your **Indoor Case Papers (ICPs)**. Request them from Apollo Hospital's Medical Records Department (MRD) for admission Feb 10-14, 2026. All other 5 documents are verified.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
+  if (q.includes("reimburse") || q.includes("calculat") || q.includes("waterfall") || q.includes("payable") || q.includes("estimate")) {
+    return "**Indicative Payable Estimate Breakdown:**\n\n- **Gross Hospital Bill:** ₹73,000.00\n- **Less: IRDAI Non-Payables:** -₹5,000.00 (Gloves, PPE, Registration & Bio-waste)\n- **Less: Room Rent Adjustment:** ₹0.00 (Tariff within limits)\n- **Less: Policy Co-Payment (10%):** -₹6,800.00\n\n👉 **Indicative payable estimate — subject to your insurer's assessment:** **₹61,200.00**\n\n*Note: Computed deterministically according to your policy terms and IRDAI 2024 guidelines.*\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+  }
+  if (q.includes("non-medical") || q.includes("consumable") || q.includes("deduct") || q.includes("glove") || q.includes("ppe")) {
+    return "**Commonly Non-Payable Deductions (IRDAI Annexure I, List I):**\n\nUnder IRDAI standardization regulations, routine consumables are non-admissible:\n\n1. **Gloves & PPE Kits:** Routine protective gear is hospital overhead unless bundled into surgical packages.\n2. **Registration & MRD Fees:** Hospital administration charges are non-payable.\n3. **Bio-Medical Waste:** Statutory environmental levies cannot be billed to insurance.\n\n**Patient Remedy:** Ask your hospital billing desk for a surgical certificate confirming gloves or PPE were procedure-critical in the ICU/OT.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+  }
   if (q.includes("appeal") || q.includes("gro") || q.includes("ombudsman")) {
     return "**Appeal path:** 1) Send appeal letter to Star Health GRO, 2) Attach renewal receipts 2018-2026, 3) If no response in 30 days → Insurance Ombudsman (Bengaluru) under Rule 17. Use the Appeal Builder tab to generate your letter.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
   }
-  return "I'm your ClaimSaathi AI companion. Ask me about your claim rejection, missing documents, the IRDAI moratorium, or how to file an appeal.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
+  return "I'm your ClaimSaathi AI companion. Ask me about your claim rejection, missing documents, bill audit deductions, or how to file an appeal.\n\n---\n*AI guidance only. Final claim decision remains with the insurer.*";
 }
 

@@ -1,0 +1,111 @@
+{
+  "version": "2024.1",
+  "name": "IRDAI Standard Non-Payable Consumables Catalog",
+  "authority": "Insurance Regulatory and Development Authority of India (IRDAI) & General Insurance Council (GIC)",
+  "reference": "IRDAI Master Circular on Standardization of Exclusions (Annexure I, List I - Expenses Not Admissible)",
+  "rules": [
+    {
+      "rule_id": "IRDAI-NP-001",
+      "category": "Consumables & PPE",
+      "keywords": ["glove", "gloves", "surgical gloves", "examination gloves", "nitrile gloves", "sterile gloves"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 1 (Gloves)",
+      "explanation": "Under IRDAI standardization guidelines, routine examination and surgical gloves are classified as non-payable consumables and typically deducted unless bundled into an all-inclusive surgical package rate.",
+      "patient_remedy": "Ask hospital billing desk for a surgical package itemization or doctor certificate confirming gloves were specialized and procedure-critical."
+    },
+    {
+      "rule_id": "IRDAI-NP-002",
+      "category": "Consumables & PPE",
+      "keywords": ["ppe", "ppe kit", "face mask", "n95", "n95 mask", "surgical mask", "face shield", "gowns", "apron", "shoe cover", "caps", "head cover"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 2 (PPE & Protective Gear)",
+      "explanation": "Personal protective apparel including standard masks, caps, and PPE kits for staff are treated as hospital overhead consumables rather than patient-specific medical treatment charges.",
+      "patient_remedy": "If admission was in an isolated infectious disease ward or critical care ICU requiring specialized barrier nursing, obtain an ICU barrier nursing justification letter from the hospital."
+    },
+    {
+      "rule_id": "IRDAI-NP-003",
+      "category": "Hygiene & Sanitization",
+      "keywords": ["sanitizer", "hand rub", "savlon", "dettol", "spirit", "alcohol swab", "betadine swab", "antiseptic lotion", "hydrogen peroxide"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 4 (Sanitizers & Disinfectants)",
+      "explanation": "Disinfectant solutions and routine sanitizers used during ward rounds or nursing are considered general hospital hygiene maintenance expenses.",
+      "patient_remedy": "Only specialized wound debridement antiseptics prescribed directly by the surgeon on the operative record may be challenged for reconsideration."
+    },
+    {
+      "rule_id": "IRDAI-NP-004",
+      "category": "Administrative & Record Charges",
+      "keywords": ["registration", "registration fee", "admission fee", "admission charges", "record charges", "mrd", "mrd charges", "file charges", "file fee", "documentation charges", "folder fee", "id card charges", "case sheet charges"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 7 (Registration & Admission Fees)",
+      "explanation": "IRDAI guidelines state that administrative fees for patient registration, medical records (MRD), file folders, and admission processing cannot be passed on to health insurance claims.",
+      "patient_remedy": "These are strictly hospital administrative overheads under IRDAI regulations; hospitals are not permitted to bill these under reimbursable medical expenses."
+    },
+    {
+      "rule_id": "IRDAI-NP-005",
+      "category": "Bio-Medical Waste & Infrastructure",
+      "keywords": ["biomedical waste", "bio-medical waste", "bmw charges", "waste disposal", "pollution cess", "incineration charges", "waste management", "infection control"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 11 (Waste Management & Hospital Levies)",
+      "explanation": "Hospital bio-medical waste management and environmental compliance levies are institutional overheads and are excluded from health insurance claims.",
+      "patient_remedy": "Hospitals should absorb statutory waste compliance into room rent and cannot levy itemized patient surcharges under standard TPA guidelines."
+    },
+    {
+      "rule_id": "IRDAI-NP-006",
+      "category": "Attendant & Visitor Comfort",
+      "keywords": ["attendant charges", "attendant pass", "extra bed for attendant", "visitor pass", "telephone charges", "tv charges", "laundry charges", "room service"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 15 (Personal Comfort & Attendant Items)",
+      "explanation": "Services and amenities provided for the convenience of family members, visitors, or attendants are not medical treatments and are not covered.",
+      "patient_remedy": "These are non-medical attendant charges and must be borne out-of-pocket by the policyholder."
+    },
+    {
+      "rule_id": "IRDAI-NP-007",
+      "category": "Dietary & Nutrition Supplements",
+      "keywords": ["mineral water", "kinley", "aquafina", "bisleri", "food charges", "attendant food", "beverage", "tea", "coffee", "fruit basket", "nutrition supplement", "protein powder", "ensure", "pediasure"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 21 (Non-medical food, mineral water & supplements)",
+      "explanation": "Commercial mineral water, visitor catering, and nutritional supplements not strictly certified as parenteral or critical clinical nutrition are excluded.",
+      "patient_remedy": "If enteral feeding or therapeutic clinical nutrition was medically mandated, obtain a clinical nutritionist prescription in the inpatient case notes."
+    },
+    {
+      "rule_id": "IRDAI-NP-008",
+      "category": "Instruments & Patient Comfort",
+      "keywords": ["thermometer", "digital thermometer", "spirometer", "pulse oximeter charges", "hot water bag", "ice bag", "bed pan", "urine pot", "urinal", "cushion"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 28 (General Reusable Instruments)",
+      "explanation": "General monitoring equipment and patient comfort appliances that are durable/reusable hospital assets are non-payable when billed individually.",
+      "patient_remedy": "If a respirometer or incentive spirometer was taken home for post-discharge pulmonary rehabilitation, claim under post-hospitalization rehabilitation benefits if your policy covers it."
+    },
+    {
+      "rule_id": "IRDAI-NP-009",
+      "category": "Dressings & Bandages (Consumable Surcharges)",
+      "keywords": ["cotton roll", "absorbent cotton", "crepe bandage", "micropore tape", "adhesive tape", "dynaplast", "gauze roll", "swab roll"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 34 (Routine Dressing Materials)",
+      "explanation": "Routine wound dressing materials and adhesive tapes billed as itemized consumables outside surgical theater packages are routinely marked non-payable.",
+      "patient_remedy": "Request the treating surgeon to clarify if complex multi-layer burn/surgical wound dressing requiring specialized sterile packs was performed."
+    },
+    {
+      "rule_id": "IRDAI-NP-010",
+      "category": "Personal Hygiene",
+      "keywords": ["diaper", "adult diaper", "baby diaper", "underpad", "tissue paper", "wet wipes", "soap", "toothpaste", "comb", "towel", "shampoo"],
+      "standard_classification": "COMMONLY_NON_PAYABLE",
+      "guideline_reference": "IRDAI List I - Item 42 (Personal Hygiene Items)",
+      "explanation": "Toiletry, sanitary pads, disposable underpads, and personal hygiene products are classified as non-medical daily living consumables.",
+      "patient_remedy": "These are personal hygiene items and must be settled directly by the policyholder."
+    }
+  ],
+  "review_triggers": [
+    "miscellaneous",
+    "misc charges",
+    "sundry",
+    "other charges",
+    "kit charges",
+    "service charges",
+    "admin charges",
+    "handling charges",
+    "investigation charges unspecified",
+    "package surplus",
+    "overhead"
+  ]
+}

@@ -76,6 +76,8 @@ class ReadinessResult(BaseModel):
     requirements: list[dict[str, Any]]
     flags: list[str] = Field(default_factory=list)
     missing_mandatory: list[str] = Field(default_factory=list)
+    needs_fix_mandatory: list[str] = Field(default_factory=list)
+    cross_doc_checks: list[dict[str, Any]] = Field(default_factory=list)
     ai_explanation_status: str = "available"
 
 
@@ -121,3 +123,51 @@ class ClaimEventResponse(BaseModel):
     actor_type: str
     metadata_json: dict[str, Any] | None = None
     occurred_at: datetime
+
+
+class AuditedLineItemSchema(BaseModel):
+    item_id: str
+    description: str
+    amount_paise: int
+    classification: str
+    category: str | None = None
+    rule_id: str | None = None
+    guideline_reference: str | None = None
+    explanation: str | None = None
+    patient_remedy: str | None = None
+
+
+class WaterfallStepSchema(BaseModel):
+    step_key: str
+    label: str
+    amount_paise: int
+    status: str
+    notes: str | None = None
+
+
+class BillAuditResponse(BaseModel):
+    rules_version: str
+    gross_billed_paise: int
+    commonly_non_payable_paise: int
+    needs_review_paise: int
+    payable_medical_paise: int
+    room_rent_deduction_paise: int
+    room_rent_status: str
+    copay_deduction_paise: int
+    copay_status: str
+    indicative_payable_paise: int
+    estimate_label: str
+    waterfall: list[WaterfallStepSchema]
+    items: list[AuditedLineItemSchema]
+    non_payable_count: int
+    needs_review_count: int
+    payable_medical_count: int
+
+
+class BillAuditRequest(BaseModel):
+    items: list[dict[str, Any]] | None = None
+    policy_room_rent_limit_daily_paise: int | None = None
+    actual_room_rent_daily_paise: int | None = None
+    stay_days: int = 1
+    copay_percentage: int | None = None
+

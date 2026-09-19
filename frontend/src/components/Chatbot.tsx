@@ -19,8 +19,10 @@ function renderMarkdown(text: string): string {
 }
 
 const SUGGESTED = [
+  { en: "Explain my reimbursement calculation", hi: "मेरे रिइम्बर्समेंट की गणना समझाइए" },
+  { en: "What non-medical items were deducted?", hi: "कौन से गैर-चिकित्सीय खर्चे काटे गए?" },
+  { en: "Which documents are still missing?", hi: "कौन से दस्तावेज़ गायब हैं?" },
   { en: "Why was my claim rejected?", hi: "मेरा क्लेम क्यों खारिज हुआ?" },
-  { en: "What documents are missing?", hi: "कौन से दस्तावेज़ गायब हैं?" },
   { en: "Explain the 60-month moratorium", hi: "60 महीने का मोरेटोरियम समझाइए" },
   { en: "How do I file an appeal?", hi: "अपील कैसे दर्ज करें?" },
 ];
