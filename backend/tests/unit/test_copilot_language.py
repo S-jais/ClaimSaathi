@@ -109,3 +109,20 @@ def test_prompt_rendering_injects_glossary_for_hindi():
     )
     assert "VOICE MODE" in prompt_voice
     assert "spoken_text" in prompt_voice
+
+
+def test_parse_indian_number_words():
+    from app.copilot.orchestrator import parse_indian_number_words
+
+    assert parse_indian_number_words("डेढ़ लाख का बिल है") == 150000
+    assert parse_indian_number_words("sawa lakh bill") == 125000
+    assert parse_indian_number_words("पौने दो लाख") == 175000
+    assert parse_indian_number_words("dhai hazar deductions") == 2500
+    assert parse_indian_number_words("do lakh ka cover") == 200000
+
+
+def test_explicit_language_switch_detection():
+    assert detect_message_language("Hindi mein batao") == "hinglish"
+    assert detect_message_language("English please") == "en"
+    assert detect_message_language("In english") == "en"
+    assert detect_message_language("हिंदी में बताइए") == "hi"

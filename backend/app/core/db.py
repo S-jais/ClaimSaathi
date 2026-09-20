@@ -27,7 +27,7 @@ engine = create_async_engine(
     pool_pre_ping=True,       # detect stale connections
     pool_size=10,
     max_overflow=20,
-    connect_args={"timeout": 3, "command_timeout": 5},
+    connect_args={"timeout": 1, "command_timeout": 3},
     echo=not settings.is_production,  # log SQL only in dev
 )
 
@@ -96,3 +96,19 @@ async def check_db_connection() -> bool:
         return True
     except Exception:
         return False
+
+
+_db_online: bool | None = None
+_last_db_check: float = 0.0
+
+
+async def is_db_available() -> bool:
+    """Returns True if the database is reachable, caching result for 15s to keep offline latency under 1ms."""
+    global _db_online, _last_db_check
+    import time
+    now = time.time()
+    if _db_online is not None and (now - _last_db_check) < 15:
+        return _db_online
+    _db_online = await check_db_connection()
+    _last_db_check = now
+    return _db_online

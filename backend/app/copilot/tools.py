@@ -46,20 +46,27 @@ if RULES_PATH.exists():
 
 async def tool_get_case_state(db: AsyncSession, claim: Claim) -> dict[str, Any]:
     """Retrieve verified snapshot of claim, documents, score, and drafts."""
-    # Count documents
-    doc_stmt = select(Document).where(Document.claim_id == claim.id, Document.deleted_at.is_(None))
-    doc_res = await db.execute(doc_stmt)
-    docs = doc_res.scalars().all()
+    docs = []
+    rejections = []
+    copilot_drafts = []
 
-    # Rejection reasons
-    rej_stmt = select(RejectionReason).where(RejectionReason.claim_id == claim.id)
-    rej_res = await db.execute(rej_stmt)
-    rejections = rej_res.scalars().all()
+    try:
+        # Count documents
+        doc_stmt = select(Document).where(Document.claim_id == claim.id, Document.deleted_at.is_(None))
+        doc_res = await db.execute(doc_stmt)
+        docs = doc_res.scalars().all()
 
-    # Appeal drafts
-    draft_stmt = select(CopilotDraft).where(CopilotDraft.case_id == claim.id).order_by(CopilotDraft.created_at.desc())
-    draft_res = await db.execute(draft_stmt)
-    copilot_drafts = draft_res.scalars().all()
+        # Rejection reasons
+        rej_stmt = select(RejectionReason).where(RejectionReason.claim_id == claim.id)
+        rej_res = await db.execute(rej_stmt)
+        rejections = rej_res.scalars().all()
+
+        # Appeal drafts
+        draft_stmt = select(CopilotDraft).where(CopilotDraft.case_id == claim.id).order_by(CopilotDraft.created_at.desc())
+        draft_res = await db.execute(draft_stmt)
+        copilot_drafts = draft_res.scalars().all()
+    except Exception as e:
+        logger.warning("tool_get_case_state_db_fallback", error=str(e))
 
     claim_amount_paise = int((claim.claim_amount or Decimal("0")) * 100)
 

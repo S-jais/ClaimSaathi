@@ -1,0 +1,12 @@
+{
+  "name": "claimsaathi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ClaimSaathi — AI Copilot for Indian Health Insurance Claims",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix frontend",
+    "lint": "npm run lint --prefix frontend"
+  }
+}

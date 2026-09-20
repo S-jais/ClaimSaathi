@@ -58,34 +58,28 @@ from app.memory.cognee_client import get_cognee_client
 
 logger = structlog.get_logger(__name__)
 
-PROMPT_DIR = Path(__file__).parent / "prompts"
-SYSTEM_PROMPT_PATH = PROMPT_DIR / "copilot_system.md"
-VOICE_MODE_PATH = PROMPT_DIR / "voice_mode.md"
-GLOSSARY_HI_PATH = PROMPT_DIR / "glossary_hi.md"
+PROMPT_DIRS = [
+    Path.cwd() / "prompts",
+    Path(__file__).resolve().parents[3] / "prompts",
+    Path(__file__).parent / "prompts",
+]
 
-_SYSTEM_PROMPT_TEMPLATE = ""
-if SYSTEM_PROMPT_PATH.exists():
-    try:
-        with open(SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
-            _SYSTEM_PROMPT_TEMPLATE = f.read()
-    except Exception as e:
-        logger.warning("failed_reading_copilot_system_prompt", error=str(e))
 
-_VOICE_MODE_TEMPLATE = ""
-if VOICE_MODE_PATH.exists():
-    try:
-        with open(VOICE_MODE_PATH, "r", encoding="utf-8") as f:
-            _VOICE_MODE_TEMPLATE = f.read()
-    except Exception as e:
-        logger.warning("failed_reading_voice_mode_prompt", error=str(e))
+def _read_prompt_file(filename: str) -> str:
+    for p_dir in PROMPT_DIRS:
+        candidate = p_dir / filename
+        if candidate.exists():
+            try:
+                with open(candidate, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception as e:
+                logger.warning("failed_reading_prompt_file", path=str(candidate), error=str(e))
+    return ""
 
-_GLOSSARY_HI_TEMPLATE = ""
-if GLOSSARY_HI_PATH.exists():
-    try:
-        with open(GLOSSARY_HI_PATH, "r", encoding="utf-8") as f:
-            _GLOSSARY_HI_TEMPLATE = f.read()
-    except Exception as e:
-        logger.warning("failed_reading_glossary_hi_prompt", error=str(e))
+
+_SYSTEM_PROMPT_TEMPLATE = _read_prompt_file("copilot_system.md")
+_VOICE_MODE_TEMPLATE = _read_prompt_file("voice_mode.md")
+_GLOSSARY_HI_TEMPLATE = _read_prompt_file("glossary_hi.md")
 
 
 def detect_message_language(text: str, default_lang: str = "en") -> str:
@@ -96,7 +90,13 @@ def detect_message_language(text: str, default_lang: str = "en") -> str:
     if re.search(r"[\u0900-\u097F]", text):
         return "hi"
 
-    # 2. Common Hinglish grammatical / question vocabulary
+    # 2. Explicit language switch requests
+    if re.search(r"\b(english please|in english|reply in english|switch to english)\b", text, re.IGNORECASE):
+        return "en"
+    if re.search(r"\b(hindi mein|hindi me|in hindi|hindi please)\b", text, re.IGNORECASE):
+        return "hinglish"
+
+    # 3. Common Hinglish grammatical / question vocabulary
     hinglish_markers = [
         r"\bkya\b", r"\bkyaa\b", r"\bmera\b", r"\bmeri\b", r"\bmere\b",
         r"\bkaise\b", r"\bkab\b", r"\bkub\b", r"\bkahan\b", r"\bkaha\b",
@@ -115,6 +115,30 @@ def detect_message_language(text: str, default_lang: str = "en") -> str:
         return default_lang
 
     return "en"
+
+
+def parse_indian_number_words(text: str) -> int | None:
+    """
+    Parse colloquial Hindi number words and Indian units:
+    हज़ार/hazaar (1,000), लाख/lakh (1,00,000), करोड़/crore (1,00,00,000)
+    डेढ़ लाख = 1,50,000, सवा लाख = 1,25,000, पौने दो लाख = 1,75,000, ढाई हज़ार = 2,500
+    """
+    t = text.lower()
+    if "डेढ़ लाख" in t or "dedh lakh" in t:
+        return 150000
+    if "सवा लाख" in t or "sawa lakh" in t:
+        return 125000
+    if "पौने दो लाख" in t or "paune do lakh" in t:
+        return 175000
+    if "ढाई हज़ार" in t or "dhai hazar" in t or "dhai hazaar" in t:
+        return 2500
+    if "ढाई लाख" in t or "dhai lakh" in t:
+        return 250000
+    if "दो लाख" in t or "do lakh" in t:
+        return 200000
+    if "एक लाख" in t or "ek lakh" in t:
+        return 100000
+    return None
 
 
 def generate_spoken_text(reply: str, language: str = "en") -> str:
@@ -277,15 +301,18 @@ class CopilotOrchestrator:
         if new_stage != session.stage:
             logger.info("copilot_stage_transition", from_stage=session.stage, to_stage=new_stage)
             session.stage = new_stage
-            event = ClaimEvent(
-                claim_id=claim.id,
-                event_type="copilot_stage_transition",
-                actor_type="system",
-                actor_id=str(user.id),
-                metadata_json={"from_stage": session.stage, "to_stage": new_stage},
-            )
-            db.add(event)
-            await db.flush()
+            try:
+                event = ClaimEvent(
+                    claim_id=claim.id,
+                    event_type="copilot_stage_transition",
+                    actor_type="system",
+                    actor_id=str(user.id),
+                    metadata_json={"from_stage": session.stage, "to_stage": new_stage},
+                )
+                db.add(event)
+                await db.flush()
+            except Exception as e:
+                logger.warning("stage_transition_event_db_fallback", error=str(e))
 
         ui_stage = get_ui_stage(session.stage)
 
@@ -424,25 +451,27 @@ class CopilotOrchestrator:
         final_payload = CopilotResponsePayload.model_validate(guarded_dict)
 
         # 8. Persistence
-        # Save user message
-        db_user_msg = CopilotMessage(
-            session_id=session.id,
-            role="user",
-            content=user_message,
-        )
-        db.add(db_user_msg)
+        try:
+            db_user_msg = CopilotMessage(
+                session_id=session.id,
+                role="user",
+                content=user_message,
+            )
+            db.add(db_user_msg)
 
-        # Save assistant message
-        db_asst_msg = CopilotMessage(
-            session_id=session.id,
-            role="assistant",
-            content=final_payload.reply,
-            structured_payload=final_payload.model_dump(),
-            tool_trace=tool_trace,
-            citations=[c.model_dump() for c in final_payload.citations],
-        )
-        db.add(db_asst_msg)
-        await db.commit()
+            # Save assistant message
+            db_asst_msg = CopilotMessage(
+                session_id=session.id,
+                role="assistant",
+                content=final_payload.reply,
+                structured_payload=final_payload.model_dump(),
+                tool_trace=tool_trace,
+                citations=[c.model_dump() for c in final_payload.citations],
+            )
+            db.add(db_asst_msg)
+            await db.commit()
+        except Exception as e:
+            logger.warning("copilot_db_persistence_fallback", error=str(e))
 
         # Asynchronously remember extracted facts in Cognee
         if final_payload.sections.facts:

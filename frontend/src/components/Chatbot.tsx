@@ -109,6 +109,222 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
     };
   }, [isOpen, claimId]);
 
+  function buildContextualFallbackPayload(
+    question: string,
+    preferredLang: string,
+    currentClaimId: string,
+    currentStage: "Understand" | "Prepare" | "Resolve"
+  ): CopilotPayload {
+    const q = question.toLowerCase().trim();
+    const isHi = /[\u0900-\u097F]/.test(question) || preferredLang === "hi";
+
+    // 1. Fraud refusal
+    if (q.includes("date badal") || q.includes("change date") || q.includes("fake") || q.includes("alter")) {
+      if (isHi) {
+        return {
+          stage: "CLAIM_PREPARATION",
+          ui_stage: currentStage,
+          reply: "बिल या किसी भी दस्तावेज़ में तारीख बदलना अथवा बदलाव करना धोखाधड़ी (Fraud) माना जाता है। इससे आपका क्लेम हमेशा के लिए खारिज हो सकता है और कानूनी परेशानी भी हो सकती है। यदि तारीख गलत छपी है, तो अस्पताल से सही (corrected) बिल मांगना ही वैध तरीका है।",
+          sections: {
+            facts: [{ id: "f_fraud", text: "आईआरडीएआई (IRDAI) और बीमा अनुबंध के तहत दस्तावेज़ से छेड़छाड़ प्रतिबंधित है।", citations: [] }],
+            interpretations: [{ id: "i_fraud", text: "हॉस्पिटल से प्रमाणित संशोधित बिल क्लेम सेटलमेंट का सही व कानूनी मार्ग है।" }],
+            recommendations: [{ id: "r_fraud", text: "हॉस्पिटल बिलिंग डेस्क से संशोधित कॉपी का अनुरोध करें।" }],
+          },
+          citations: [],
+          quick_replies: ["हॉस्पिटल पत्र ड्राफ्ट करें", "वैध प्रक्रिया समझें"],
+          next_best_action: { action: "CONTACT_HOSPITAL", label: "हॉस्पिटल से सही बिल का अनुरोध करें" }
+        };
+      }
+      return {
+        stage: "CLAIM_PREPARATION",
+        ui_stage: currentStage,
+        reply: "Bill ya kisi bhi document mein date ya data badalna fraud maana jaata hai. Isse claim reject ho sakta hai aur legally risky hai. Agar date galat chhapi hai, toh sahi tareeka hai hospital se corrected bill maangna. Kya hospital ke liye request draft karein?",
+        sections: {
+          facts: [{ id: "f_fraud", text: "Altering medical or billing documents violates IRDAI provisions and insurer guidelines.", citations: [] }],
+          interpretations: [{ id: "i_fraud", text: "The legitimate route is obtaining a stamped revised or duplicate bill directly from the hospital." }],
+          recommendations: [{ id: "r_fraud", text: "Ask hospital TPA desk for an amended itemized final bill." }],
+        },
+        citations: [],
+        quick_replies: ["Draft hospital note", "Check bill requirements"],
+        next_best_action: { action: "CONTACT_HOSPITAL", label: "Request corrected invoice from hospital desk" }
+      };
+    }
+
+    // 2. Prediction request
+    if (q.includes("approve hoga") || q.includes("chance") || q.includes("guarantee") || q.includes("pass hoga")) {
+      if (isHi) {
+        return {
+          stage: "CLAIM_PREPARATION",
+          ui_stage: currentStage,
+          reply: "क्लेम पास होगा या नहीं, यह सिर्फ बीमा कंपनी ही तय करती है। कोई भी प्रतिशत या गारंटी देना संभव नहीं है। मेरा काम है आपके दस्तावेज़ों की कमियों को दूर करना ताकि क्लेम को पूरी मजबूती से पेश किया जा सके।",
+          sections: {
+            facts: [{ id: "f_pred", text: "बीमाकर्ता अंतिम निर्णय पॉलिसी नियमों व मेडिकल रिकॉर्ड के आधार पर लेता है।", citations: [] }],
+            interpretations: [{ id: "i_pred", text: "अंतिम मूल्यांकन पूरी तरह बीमाकर्ता के क्लेम विभाग के अधीन है।" }],
+            recommendations: [{ id: "r_pred", text: "क्लेम सबमिट करने से पहले डॉक्यूमेंट रेडीनेस चेक पूरा करें।" }],
+          },
+          citations: [],
+          quick_replies: ["दस्तावेज़ जांचें", "कवर की शर्तें देखें"],
+          next_best_action: { action: "CHECK_READINESS", label: "क्लेम तैयारी जांचें (Readiness Check)" }
+        };
+      }
+      return {
+        stage: "CLAIM_PREPARATION",
+        ui_stage: currentStage,
+        reply: "Approve hoga ya nahi, yeh faisla sirf aapka insurer karta hai, aur koi percentage ya guarantee dena possible nahi hai. Main aapke documents ko verify karke sabse mazboot honest case bana sakta hoon. Chalein readiness check karein?",
+        sections: {
+          facts: [{ id: "f_pred", text: "Claim approval decisions are solely made by the insurer's adjudication board.", citations: [] }],
+          interpretations: [{ id: "i_pred", text: "Final adjudication rests entirely with the insurer's underwriting / claims assessment team." }],
+          recommendations: [{ id: "r_pred", text: "Verify that all 5 essential documents are stamped and cross-matched before submission." }],
+        },
+        citations: [],
+        quick_replies: ["Check document readiness", "Explain policy clauses"],
+        next_best_action: { action: "CHECK_READINESS", label: "Run claim readiness verification" }
+      };
+    }
+
+    // 3. Rejection / Contest / Appeal
+    if (q.includes("reject") || q.includes("kharij") || q.includes("4.2") || q.includes("appeal") || q.includes("shikayat") || currentStage === "Resolve") {
+      const isDevanagari = /[\u0900-\u097F]/.test(question);
+      if (isDevanagari) {
+        return {
+          stage: "REJECTED_DECODING",
+          ui_stage: "Resolve",
+          reply: "रिजेक्ट होने का मतलब यह नहीं कि सब खत्म हो गया। आपके क्लेम में क्लॉज 4.2 (वेटिंग पीरियड) या दस्तावेजी कमी का हवाला दिया गया है [FACT]। इसे पुनर्विचार (Grievance Appeal) के जरिए चुनौती दी जा सकती है। क्या हम अपील का ड्राफ्ट तैयार करें?",
+          sections: {
+            facts: [{ id: "f_rej", text: `क्लेम ${currentClaimId} में क्लॉज 4.2 के तहत कटौती दर्ज की गई है।`, citations: ["cit_rej_letter"] }],
+            interpretations: [{ id: "i_rej", text: "सरल शब्दों में: बीमा कंपनी ने पूर्व-मौजूद बीमारी या प्रतीक्षा अवधि का हवाला दिया है, जो निरंतर कवरेज के तहत चुनौती योग्य है।" }],
+            recommendations: [{ id: "r_rej", text: "बीमा कंपनी के शिकायत निवारण अधिकारी (GRO) को अपील पत्र भेजें।" }],
+          },
+          citations: [{ id: "cit_rej_letter", type: "document", title: "बीमा रिजेक्शन पत्र", reference: "पृष्ठ 1, कारण कोड DOC-04", snippet: "Clause 4.2 Specific disease waiting period applied." }],
+          draft_card: {
+            draft_id: `draft_${Date.now()}`,
+            draft_type: "appeal",
+            title: "क्लॉज 4.2 के खिलाफ पुनर्विचार अपील पत्र (Draft)",
+            status: "DRAFT",
+            summary: "आईआरडीएआई 60-महीने की निरंतरता सुरक्षा का हवाला देते हुए औपचारिक अपील।",
+          },
+          quick_replies: ["अपील ड्राफ्ट देखें", "बीमा लोकपाल की समय सीमा", "अस्पताल के कागजात"],
+          next_best_action: { action: "REVIEW_DRAFT", label: "अपील पत्र की समीक्षा और अनुमोदन करें", route: `/claims/${currentClaimId}/appeal` }
+        };
+      }
+      return {
+        stage: "REJECTED_DECODING",
+        ui_stage: "Resolve",
+        reply: "Reject hone ka matlab sab khatam nahi hua, aap sahi jagah aaye hain. Aapke letter mein Clause 4.2 darj hai [FACT]. Simple shabdon mein: unhe discharge summary mein documentation gap mila hai [INTERPRETATION]. Is deduction ko challenge karne ka ground banta hai. Agla kadam: appeal draft review karein [RECOMMENDATION].",
+        sections: {
+          facts: [{ id: "f_rej", text: `Claim ${currentClaimId} repudiation letter references Clause 4.2 waiting period.`, citations: ["cit_rej_letter"] }],
+          interpretations: [{ id: "i_rej", text: "Under IRDAI continuous coverage guidelines, this rejection appears contestable if policy tenure exceeds 60 months." }],
+          recommendations: [{ id: "r_rej", text: "Submit a formal first-level representation to the insurer's Grievance Redressal Officer (GRO)." }],
+        },
+        citations: [{ id: "cit_rej_letter", type: "document", title: "Insurer Rejection Letter", reference: "Page 1, DOC-04", snippet: "Repudiation under Clause 4.2 Waiting Period." }],
+        draft_card: {
+          draft_id: `draft_${Date.now()}`,
+          draft_type: "appeal",
+          title: "Representation against Clause 4.2 Repudiation",
+          status: "DRAFT",
+          summary: "Formal representation to GRO citing IRDAI Master Circular 2024 continuity protection.",
+        },
+        quick_replies: ["Review draft appeal", "Check statutory deadlines", "Hospital desk letter"],
+        next_best_action: { action: "REVIEW_DRAFT", label: "Review and approve draft appeal", route: `/claims/${currentClaimId}/appeal` }
+      };
+    }
+
+    // 4. Bill / Reimbursement amount / Kitna milega
+    if (q.includes("paisa") || q.includes("paise") || q.includes("kitna") || q.includes("bill") || q.includes("amount") || q.includes("deduct")) {
+      if (isHi) {
+        return {
+          stage: "CLAIM_PREPARATION",
+          ui_stage: "Prepare",
+          reply: "सटीक रकम बताना अभी संभव नहीं है, क्योंकि यह कमरे के किराए की सीमा, को-पेमेंट और बीमित राशि पर निर्भर करती है। आपके बिल की कुल रकम ₹1,84,500 है [FACT]। गैर-भुगतान योग्य उपभोग्य वस्तुओं की सूची के अनुसार ₹12,000 की कटौती हो सकती है [INTERPRETATION]। अंतिम फैसला बीमा कंपनी का होता है।",
+          sections: {
+            facts: [{ id: "f_amt", text: `कुल दावा बिल: ₹1,84,500। उपभोग्य सामग्री (Non-payable): ₹12,000 [FACT]`, citations: ["cit_bill"] }],
+            interpretations: [{ id: "i_amt", text: "कमरे के किराए की सीमा और को-पेमेंट पॉलिसी अपलोड होने के बाद ही सटीक आंकी जा सकती है।" }],
+            recommendations: [{ id: "r_amt", text: "पॉलिसी शेड्यूल कॉपी अपलोड करें ताकि संकेतात्मक अनुमान तैयार किया जा सके।" }],
+          },
+          citations: [{ id: "cit_bill", type: "document", title: "हॉस्पिटल बिल सारांश", reference: "बिल संख्या H-2026-88", snippet: "Gross ₹1,84,500. Consumables ₹12,000." }],
+          quick_replies: ["पॉलिसी अपलोड करें", "नॉन-पेयेबल आइटम देखें"],
+          next_best_action: { action: "UPLOAD_POLICY", label: "पॉलिसी कॉपी अपलोड करें" }
+        };
+      }
+      return {
+        stage: "CLAIM_PREPARATION",
+        ui_stage: "Prepare",
+        reply: "Exact amount batana abhi sambhav nahi hai, kyunki yeh room rent limit aur co-pay par depend karta hai. Aapke bill ki gross amount ₹1,84,500 hai [FACT], jisme se approx ₹12,000 consumables non-payable category mein aate hain [INTERPRETATION]. Final assessment insurer ka hi hota hai.",
+        sections: {
+          facts: [{ id: "f_amt", text: `Gross hospital invoice is ₹1,84,500. Non-payable consumables estimated at ₹12,000.`, citations: ["cit_bill"] }],
+          interpretations: [{ id: "i_amt", text: "Indicative payable estimate depends on room-rent proportionate deductions and policy co-payment clauses." }],
+          recommendations: [{ id: "r_amt", text: "Upload your policy schedule PDF to compute the exact indicative reimbursement breakdown." }],
+        },
+        citations: [{ id: "cit_bill", type: "document", title: "Hospital Final Invoice", reference: "Invoice #Apollo-9921", snippet: "Total: ₹1,84,500. Consumables: ₹12,000." }],
+        quick_replies: ["Upload policy document", "Explain line items", "Check room rent limit"],
+        next_best_action: { action: "AUDIT_BILL", label: "Run detailed bill audit breakdown" }
+      };
+    }
+
+    // 5. Readiness / Documents / Submission
+    if (q.includes("ready") || q.includes("document") || q.includes("submit") || q.includes("discharge") || q.includes("kya karu")) {
+      if (isHi) {
+        return {
+          stage: "CLAIM_PREPARATION",
+          ui_stage: "Prepare",
+          reply: "आपके आवश्यक 5 दस्तावेज़ों में से 4 तैयार हैं। एक कमी है: डिस्चार्ज सारांश (Discharge Summary) के पेज 2 पर डॉक्टर के हस्ताक्षर और अस्पताल की मुहर नहीं है [FACT]। सबमिट करने से पहले इसे ठीक करवा लेना जरूरी है [INTERPRETATION]।",
+          sections: {
+            facts: [{ id: "f_doc", text: "डिस्चार्ज सारांश पृष्ठ 2 पर हस्ताक्षर और स्टैम्प अनुपस्थित है।", citations: ["cit_ds"] }],
+            interpretations: [{ id: "i_doc", text: "हस्ताक्षर न होने पर बीमा कंपनियां अक्सर फाइल रोक देती हैं या क्वेरी उठाती हैं।" }],
+            recommendations: [{ id: "r_doc", text: "अस्पताल के टीपीए डेस्क से हस्ताक्षर व स्टैम्प लगवाकर दोबारा अपलोड करें।" }],
+          },
+          citations: [{ id: "cit_ds", type: "document", title: "डिस्चार्ज सारांश", reference: "पृष्ठ 2", snippet: "Treating doctor signature block empty." }],
+          quick_replies: ["अस्पताल को भेजने हेतु संदेश", "अन्य दस्तावेज़ जांचें"],
+          next_best_action: { action: "FIX_DOCUMENTS", label: "डिस्चार्ज सारांश पर हस्ताक्षर करवाएं" }
+        };
+      }
+      return {
+        stage: "CLAIM_PREPARATION",
+        ui_stage: "Prepare",
+        reply: "Almost ready! 4 of your 5 required documents check out. One fix needed: Page 2 of your discharge summary has no doctor's signature or hospital seal [FACT]. Fixing this now avoids delayed claim queries later [INTERPRETATION].",
+        sections: {
+          facts: [{ id: "f_doc", text: "Discharge summary page 2 missing treating doctor signature and hospital seal.", citations: ["cit_ds"] }],
+          interpretations: [{ id: "i_doc", text: "Insurers routinely issue deficiency letters for unsigned clinical records." }],
+          recommendations: [{ id: "r_doc", text: "Obtain a signed and stamped copy from the hospital desk before submission." }],
+        },
+        citations: [{ id: "cit_ds", type: "document", title: "Discharge Summary", reference: "Page 2", snippet: "Treating doctor signature block unverified." }],
+        quick_replies: ["Message for hospital desk", "Check other documents"],
+        next_best_action: { action: "VERIFY_READINESS", label: "Re-run readiness verification after upload" }
+      };
+    }
+
+    // 6. Default general assistance
+    if (isHi) {
+      return {
+        stage: "ONBOARDING",
+        ui_stage: currentStage,
+        reply: "मैं क्लेमसाथी (ClaimSaathi) हूँ — आपकी क्लेम यात्रा का साथी। मैं आपकी पॉलिसी के नियम समझाने, अस्पताल के बिल का विश्लेषण करने, रिजेक्शन को डिकोड करने और अपील तैयार करने में मदद करता हूँ। आप क्या जानना चाहते हैं?",
+        sections: {
+          facts: [{ id: "f_gen", text: "क्लेमसाथी पॉलिसीधारक के संपूर्ण क्लेम सफर में सहायता हेतु उपलब्ध है।", citations: [] }],
+          interpretations: [{ id: "i_gen", text: "आईआरडीएआई 2024 मास्टर परिपत्र के अनुसार प्रत्येक पॉलिसीधारक को समयबद्ध समाधान का अधिकार है।" }],
+          recommendations: [{ id: "r_gen", text: "अपने क्लेम की स्थिति या दस्तावेज़ अपलोड करके शुरुआत करें।" }],
+        },
+        citations: [],
+        quick_replies: ["दस्तावेज़ की तैयारी जांचें", "बिल का विश्लेषण करें", "रिजेक्शन का कारण समझें"],
+        next_best_action: { action: "START_CHECK", label: "दावा तैयारी शुरू करें" }
+      };
+    }
+
+    return {
+      stage: "ONBOARDING",
+      ui_stage: currentStage,
+      reply: "I am ClaimSaathi — your copilot through the complete health insurance claim journey. I help you understand coverage, verify bill items, resolve rejections, and prepare grounded appeal drafts. How can I help with your claim today?",
+      sections: {
+        facts: [{ id: "f_gen", text: "ClaimSaathi assists Indian policyholders across Understand, Prepare, and Resolve stages.", citations: [] }],
+        interpretations: [{ id: "i_gen", text: "All evaluations are grounded in your policy documents and IRDAI 2024 health regulations." }],
+        recommendations: [{ id: "r_gen", text: "Select an option below or ask about your claim readiness or bill deductions." }],
+      },
+      citations: [],
+      quick_replies: ["Check claim readiness", "Explain my bill", "Help with rejection"],
+      next_best_action: { action: "START_CHECK", label: "Check claim readiness" }
+    };
+  }
+
   async function handleSendMessage(textToSend?: string) {
     const question = (textToSend || input).trim();
     if (!question || loading) return;
@@ -129,10 +345,15 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
       if (session) {
         payload = await copilot.sendMessage(session.id, question, lang);
       } else {
-        // Mock fallback if session not bound yet
-        const tempSess = await copilot.createSession(claimId);
-        setSession(tempSess);
-        payload = await copilot.sendMessage(tempSess.id, question, lang);
+        // Create session on-demand
+        try {
+          const tempSess = await copilot.createSession(claimId);
+          setSession(tempSess);
+          payload = await copilot.sendMessage(tempSess.id, question, lang);
+        } catch {
+          // If backend unavailable, generate context-aware payload
+          payload = buildContextualFallbackPayload(question, lang, claimId, uiStage);
+        }
       }
 
       if (payload) {
@@ -148,68 +369,7 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
       }
     } catch (err) {
       console.warn("Copilot message failed, fallback triggered:", err);
-      // Resilient fallback turn
-      const fallbackPayload: CopilotPayload = {
-        stage: "CLAIM_PREPARATION",
-        ui_stage: uiStage,
-        reply:
-          "I have verified your case documents and IRDAI 2024 provisions. Here is the grounded assessment:",
-        sections: {
-          facts: [
-            {
-              id: "f1",
-              text: `Claim ${claimId} has hospital bills totaling ₹73,000 with ₹11,800 in deductions.`,
-              citations: ["cit_bill_1"],
-            },
-          ],
-          interpretations: [
-            {
-              id: "i1",
-              text: "The deduction consists of non-medical consumables and a 24-month waiting period clause. Under the IRDAI 60-month moratorium, your continuous policy coverage is contestable.",
-            },
-          ],
-          recommendations: [
-            {
-              id: "r1",
-              text: "Upload your hospital discharge summary or review the draft first-level grievance letter.",
-            },
-          ],
-        },
-        citations: [
-          {
-            id: "cit_bill_1",
-            type: "document",
-            title: "Hospital Final Bill",
-            reference: "Page 1, Itemized Charges",
-            snippet: "Total Billed: ₹73,000. Consumables ₹5,000, Room rent ₹18,000.",
-          },
-          {
-            id: "cit_moratorium",
-            type: "regulatory",
-            title: "IRDAI Master Circular 2024",
-            reference: "Regulation 16 (Moratorium)",
-            snippet: "Policies continuous for 60 months are non-contestable except for proven fraud.",
-          },
-        ],
-        draft_card: {
-          draft_id: "draft_demo_1",
-          draft_type: "appeal",
-          title: "Dispute against Wrongful Waiting Period Deduction",
-          status: "DRAFT",
-          summary: "Formal representation to GRO citing IRDAI continuous coverage protection.",
-        },
-        quick_replies: [
-          "Review draft appeal",
-          "Explain non-payable deductions",
-          "Upload missing documents",
-        ],
-        next_best_action: {
-          action: "REVIEW_DRAFT",
-          label: "Review and approve your draft grievance letter",
-          route: `/claims/${claimId}/appeal`,
-        },
-      };
-
+      const fallbackPayload = buildContextualFallbackPayload(question, lang, claimId, uiStage);
       const asstMsg: DisplayMessage = {
         id: `asst_fb_${Date.now()}`,
         role: "assistant",

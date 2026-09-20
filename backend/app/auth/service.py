@@ -177,6 +177,34 @@ async def get_current_user(
     return user
 
 
+async def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """
+    Returns the authenticated User if a valid JWT is present, or None if unauthenticated/invalid.
+    Used for public or demo endpoints where authentication is optional.
+    """
+    if not credentials:
+        return None
+
+    try:
+        payload = __import__("app.core.security", fromlist=["decode_access_token"]).decode_access_token(
+            credentials.credentials
+        )
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+        result = await db.execute(
+            select(User)
+            .where(User.id == uuid.UUID(user_id), User.deleted_at.is_(None), User.status == "active")
+            .options(selectinload(User.user_roles).selectinload(UserRole.role))
+        )
+        return result.scalar_one_or_none()
+    except Exception:
+        return None
+
+
 def require_role(role: str):
     """
     Dependency factory: require a specific role.
