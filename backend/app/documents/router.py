@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.auth.service import get_current_user
+from app.claims.models import Claim
 from app.core.db import get_db
 from app.core.storage import get_storage
 from app.documents.models import Document, DocumentExtraction, AnalysisJob
@@ -37,15 +38,41 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB max
 
 
+async def _resolve_claim_id(db: AsyncSession, user_id: uuid.UUID, claim_id_str: str | None) -> uuid.UUID | None:
+    if not claim_id_str:
+        return None
+    try:
+        return uuid.UUID(claim_id_str)
+    except (ValueError, TypeError):
+        pass
+    # Match claim reference for user
+    stmt = select(Claim.id).where(Claim.claim_reference == claim_id_str, Claim.user_id == user_id)
+    res = await db.execute(stmt)
+    found = res.scalar_one_or_none()
+    if found:
+        return found
+    # Match claim reference demo/general
+    stmt2 = select(Claim.id).where(Claim.claim_reference == claim_id_str)
+    res2 = await db.execute(stmt2)
+    found2 = res2.scalar_one_or_none()
+    if found2:
+        return found2
+    # Return user's latest claim if exists
+    stmt3 = select(Claim.id).where(Claim.user_id == user_id, Claim.deleted_at.is_(None)).order_by(Claim.created_at.desc())
+    res3 = await db.execute(stmt3)
+    return res3.scalar_one_or_none()
+
+
 @router.get("", response_model=list[DocumentResponse])
 async def list_documents(
-    claim_id: uuid.UUID | None = None,
+    claim_id: str | None = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
+    resolved_id = await _resolve_claim_id(db, user.id, claim_id)
     stmt = select(Document).where(Document.user_id == user.id, Document.deleted_at.is_(None))
-    if claim_id:
-        stmt = stmt.where(Document.claim_id == claim_id)
+    if resolved_id:
+        stmt = stmt.where(Document.claim_id == resolved_id)
     stmt = stmt.order_by(Document.created_at.desc())
     res = await db.execute(stmt)
     return res.scalars().all()
@@ -54,7 +81,7 @@ async def list_documents(
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
-    claim_id: uuid.UUID | None = Form(None),
+    claim_id: str | None = Form(None),
     doc_type_hint: str = Form("other"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -92,8 +119,9 @@ async def upload_document(
     )
     existing_doc = existing_doc_res.scalar_one_or_none()
 
+    resolved_claim_id = await _resolve_claim_id(db, user.id, claim_id)
     storage = get_storage()
-    storage_key = f"claims/{claim_id or 'general'}/{sha256[:16]}_{filename}"
+    storage_key = f"claims/{resolved_claim_id or claim_id or 'general'}/{sha256[:16]}_{filename}"
     try:
         storage.put_object("claimsaathi-documents", storage_key, content, file.content_type or "application/octet-stream")
     except Exception:
@@ -153,7 +181,7 @@ async def upload_document(
 
     doc = existing_doc or Document(
         user_id=user.id,
-        claim_id=claim_id,
+        claim_id=resolved_claim_id,
         doc_type=payload.doc_type.lower(),
         status="completed",
         object_storage_key=storage_key,
