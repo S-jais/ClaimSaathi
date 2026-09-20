@@ -266,3 +266,88 @@ HARD_FALLBACK_RESPONSE = (
     "For assistance, contact your insurer's grievance redressal officer. "
     f"{REQUIRED_DISCLAIMER}"
 )
+
+
+# ---------------------------------------------------------------------------
+# Copilot-specific guardrails: Approval predictions & Label enforcement
+# ---------------------------------------------------------------------------
+_PROBABILITY_PATTERN = re.compile(
+    r"\b(\d{1,3}%\s*(?:chance|odds|probability|likelihood|approval|guarantee)|"
+    r"(?:chance|odds|probability|likelihood)\s+of\s+approval|"
+    r"will\s+definitely\s+be\s+approved|"
+    r"guaranteed\s+settlement)\b",
+    re.IGNORECASE,
+)
+
+
+def detect_approval_predictions(text: str) -> list[str]:
+    """Detect forbidden predictive claims about odds, approval percentages, or win guarantees."""
+    return _PROBABILITY_PATTERN.findall(text)
+
+
+def sanitize_copilot_text(text: str) -> str:
+    """Enforce mandatory regulatory phrasing."""
+    # Replace any unauthorized "Expected Settlement" with mandatory label
+    text = re.sub(
+        r"\bExpected\s+Settlement\b",
+        "Indicative payable estimate — subject to your insurer's assessment",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return text
+
+
+def enforce_copilot_guardrails(payload_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Run guardrails over structured copilot payload:
+    - Block approval odds
+    - Sanitize terminology
+    - Downgrade facts without citations to interpretations
+    """
+    reply = payload_dict.get("reply", "")
+    reply = sanitize_copilot_text(reply)
+
+    # Check for approval predictions in reply
+    preds = detect_approval_predictions(reply)
+    if preds:
+        logger.warning("approval_prediction_detected", matches=preds)
+        reply = re.sub(
+            _PROBABILITY_PATTERN,
+            "subject to your insurer's independent assessment",
+            reply,
+        )
+
+    payload_dict["reply"] = reply
+
+    # Validate facts and citations
+    sections = payload_dict.get("sections", {})
+    facts = sections.get("facts", [])
+    interpretations = sections.get("interpretations", [])
+
+    valid_facts = []
+    for f in facts:
+        f_text = sanitize_copilot_text(f.get("text", ""))
+        f_citations = f.get("citations", [])
+        if not f_citations:
+            # Fact with zero citation -> downgrade to interpretation
+            logger.info("downgrading_uncited_fact", fact_id=f.get("id"))
+            interpretations.append({
+                "id": f.get("id", f"i_{len(interpretations)+1}"),
+                "text": f_text,
+            })
+        else:
+            valid_facts.append({
+                "id": f.get("id", f"f_{len(valid_facts)+1}"),
+                "text": f_text,
+                "citations": f_citations,
+            })
+
+    sections["facts"] = valid_facts
+    sections["interpretations"] = [
+        {"id": item.get("id", f"i_{idx+1}"), "text": sanitize_copilot_text(item.get("text", ""))}
+        for idx, item in enumerate(interpretations)
+    ]
+    payload_dict["sections"] = sections
+
+    return payload_dict
+

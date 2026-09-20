@@ -1244,3 +1244,220 @@ select {
     bottom: 1rem;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   ClaimSaathi Copilot (Journey Chatbot) Components
+   --------------------------------------------------------------------------- */
+
+/* 3-Step Journey Stage Indicator */
+.copilot-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: var(--surface-brand-primary);
+  border-bottom: 1px solid var(--border-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.copilot-stage-step {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-tertiary);
+  transition: all 0.2s ease;
+}
+
+.copilot-stage-step.active {
+  color: var(--mistral-flame);
+  font-weight: 700;
+}
+
+.copilot-stage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-secondary);
+}
+
+.copilot-stage-step.active .copilot-stage-dot {
+  background: var(--mistral-flame);
+  box-shadow: 0 0 6px rgba(250, 80, 15, 0.6);
+}
+
+.copilot-stage-arrow {
+  color: var(--border-secondary);
+  font-size: 0.65rem;
+}
+
+/* Structured Tripartite Sections */
+.copilot-structured-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.copilot-section {
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--border-secondary);
+  background: var(--surface-brand-primary);
+}
+
+.copilot-section-facts {
+  border-left-color: var(--mistral-blue);
+  background: rgba(0, 130, 230, 0.04);
+}
+
+.copilot-section-interp {
+  border-left-color: var(--mistral-amber);
+  background: rgba(255, 175, 1, 0.04);
+}
+
+.copilot-section-recom {
+  border-left-color: var(--mistral-emerald);
+  background: rgba(14, 159, 110, 0.04);
+}
+
+.copilot-section-header {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.copilot-section-facts .copilot-section-header { color: var(--mistral-blue); }
+.copilot-section-interp .copilot-section-header { color: var(--mistral-orange); }
+.copilot-section-recom .copilot-section-header { color: var(--mistral-emerald); }
+
+/* Citation chips */
+.copilot-citations-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.copilot-citation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  background: var(--surface-brand-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copilot-citation-chip:hover {
+  border-color: var(--mistral-blue);
+  color: var(--mistral-blue);
+  background: rgba(0, 130, 230, 0.08);
+}
+
+/* Approval Gatekeeper Draft Card */
+.copilot-draft-card {
+  margin-top: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-brand-primary);
+  padding: 0.75rem 0.85rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.copilot-draft-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.copilot-draft-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.copilot-draft-badge.draft {
+  background: rgba(255, 175, 1, 0.15);
+  color: #B45309;
+  border: 1px solid rgba(255, 175, 1, 0.4);
+}
+
+.copilot-draft-badge.approved {
+  background: rgba(14, 159, 110, 0.15);
+  color: #065F46;
+  border: 1px solid rgba(14, 159, 110, 0.4);
+}
+
+.copilot-draft-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+/* Next Best Action Pill */
+.copilot-nba-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  background: var(--surface-brand-tertiary);
+  border: 1px solid var(--border-primary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copilot-nba-pill:hover {
+  border-color: var(--mistral-flame);
+  background: rgba(250, 80, 15, 0.05);
+}
+
+/* Quick Replies Tray */
+.copilot-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background: var(--surface-brand-secondary);
+  border-top: 1px solid var(--border-primary);
+}
+
+.copilot-quick-chip {
+  padding: 0.35rem 0.65rem;
+  border-radius: 9999px;
+  background: var(--surface-brand-primary);
+  border: 1px solid var(--border-primary);
+  font-size: 0.74rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.copilot-quick-chip:hover {
+  border-color: var(--mistral-flame);
+  color: var(--mistral-flame);
+  transform: translateY(-1px);
+}

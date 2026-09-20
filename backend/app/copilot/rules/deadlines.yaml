@@ -1,0 +1,61 @@
+# app/copilot/rules/deadlines.yaml
+# Statutory & regulatory timelines under IRDAI Master Circular 2024 and Insurance Ombudsman Rules 2017.
+
+rules:
+  - rule_id: "RULE_INTIMATION_EMERGENCY"
+    name: "Emergency Hospitalization Intimation"
+    trigger: "hospital_admission_emergency"
+    deadline_hours: 48
+    description: "Insurer must be intimated within 48 hours of emergency hospitalization."
+    source: "IRDAI Master Circular on Health Insurance 2024, Clause 12.2"
+    verified: true
+
+  - rule_id: "RULE_INTIMATION_PLANNED"
+    name: "Planned Hospitalization Intimation"
+    trigger: "hospital_admission_planned"
+    deadline_hours: 72
+    description: "Insurer must be intimated at least 48 to 72 hours prior to planned admission."
+    source: "IRDAI Master Circular on Health Insurance 2024, Clause 12.1"
+    verified: true
+
+  - rule_id: "RULE_DOC_SUBMISSION"
+    name: "Reimbursement Document Submission"
+    trigger: "hospital_discharge"
+    deadline_days: 15
+    description: "Original claim documents, discharge summary, and bills must be submitted within 15-30 days of discharge."
+    source: "Standard Health Policy Terms (IRDAI Guidelines)"
+    verified: true
+
+  - rule_id: "RULE_SETTLEMENT_TIMELINE"
+    name: "Insurer Claim Settlement Window"
+    trigger: "all_documents_submitted"
+    deadline_days: 30
+    description: "Insurer must settle or reject the claim within 30 days of receipt of last necessary document. Late payment incurs penal interest at Bank Rate + 2%."
+    source: "IRDAI (Protection of Policyholders' Interests) Regulations, 2024 Reg 15(7)"
+    verified: true
+
+escalation_ladder:
+  - step: 1
+    forum: "Grievance Redressal Officer (GRO)"
+    description: "First level appeal to insurer's internal grievance redressal officer."
+    sla_days: 15
+    mandatory_first_step: true
+    source: "IRDAI Master Circular 2024 Reg 19"
+    verified: true
+
+  - step: 2
+    forum: "IRDAI Bima Bharosa Portal"
+    description: "Government centralized grievance portal if GRO fails to resolve within 15 days or rejects appeal."
+    sla_days: 15
+    mandatory_first_step: false
+    source: "Bima Bharosa Grievance Redressal System"
+    verified: true
+
+  - step: 3
+    forum: "Insurance Ombudsman"
+    description: "Statutory quasi-judicial authority for claims up to ₹50 Lakhs. Can be approached if insurer rejects or doesn't reply within 30 days."
+    sla_days: 90
+    max_claim_amount_paise: 500000000
+    filing_window_days: 365
+    source: "Insurance Ombudsman Rules, 2017 (amended 2021)"
+    verified: true

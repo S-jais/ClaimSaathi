@@ -95,6 +95,8 @@ def create_app() -> FastAPI:
     app.include_router(documents_router, prefix="/api/v1")
     from app.chat.router import router as chat_router
     app.include_router(chat_router, prefix="/api/v1")
+    from app.copilot.router import router as copilot_router
+    app.include_router(copilot_router, prefix="/api/v1")
     # from app.consent.router import router as consent_router
     # app.include_router(consent_router, prefix="/api/v1")
     # from app.audit.router import router as audit_router

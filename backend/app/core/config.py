@@ -63,6 +63,18 @@ class Settings(BaseSettings):
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-1.5-pro"
+    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
+    GEMINI_REASONING_MODEL: str = "gemini-2.5-pro"
+
+    # --- Cognee Memory ---
+    COGNEE_ENABLED: bool = False
+    COGNEE_BASE_URL: str = "https://api.cognee.ai"
+    COGNEE_API_KEY: str = ""
+
+    # --- Copilot Chat ---
+    CHAT_MAX_TOOL_CALLS: int = 5
+    CHAT_HISTORY_TURNS: int = 12
+    CHAT_RATE_LIMIT_PER_MIN: int = 20
 
     # --- OCR ---
     OCR_ADAPTER: Literal["mock", "google_document_ai"] = "mock"

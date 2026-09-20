@@ -1232,6 +1232,111 @@ export const chat = {
   },
 };
 
+export interface CopilotSectionFact {
+  id: string;
+  text: string;
+  citations: string[];
+}
+
+export interface CopilotCitation {
+  id: string;
+  type: "document" | "policy_clause" | "regulatory" | "case_data";
+  title: string;
+  reference: string;
+  snippet: string;
+}
+
+export interface CopilotDraftCard {
+  draft_id: string;
+  draft_type: string;
+  title: string;
+  status: "DRAFT" | "APPROVED" | "REJECTED" | "SENT";
+  summary: string;
+  content?: Record<string, any>;
+}
+
+export interface CopilotPayload {
+  stage: string;
+  ui_stage: "Understand" | "Prepare" | "Resolve";
+  reply: string;
+  sections: {
+    facts: CopilotSectionFact[];
+    interpretations: { id: string; text: string }[];
+    recommendations: { id: string; text: string }[];
+  };
+  citations: CopilotCitation[];
+  draft_card?: CopilotDraftCard | null;
+  quick_replies: string[];
+  next_best_action?: { action: string; label: string; route?: string } | null;
+  warnings?: string[];
+}
+
+export interface CopilotSessionData {
+  id: string;
+  user_id: string;
+  case_id: string;
+  stage: string;
+  ui_stage: "Understand" | "Prepare" | "Resolve";
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface CopilotMessageData {
+  id: string;
+  session_id: string;
+  role: "user" | "assistant" | "system" | "tool";
+  content: string;
+  structured_payload?: CopilotPayload | null;
+  tool_trace?: any[];
+  citations?: any[];
+  created_at: string;
+}
+
+export const copilot = {
+  createSession: (caseId: string): Promise<CopilotSessionData> =>
+    request<CopilotSessionData>("/api/v1/copilot/sessions", {
+      method: "POST",
+      body: JSON.stringify({ case_id: caseId }),
+    }),
+
+  getSession: (sessionId: string): Promise<CopilotSessionData> =>
+    request<CopilotSessionData>(`/api/v1/copilot/sessions/${sessionId}`),
+
+  getHistory: (sessionId: string): Promise<CopilotMessageData[]> =>
+    request<CopilotMessageData[]>(`/api/v1/copilot/sessions/${sessionId}/messages`),
+
+  sendMessage: (sessionId: string, content: string, language: string = "en"): Promise<CopilotPayload> =>
+    request<CopilotPayload>(`/api/v1/copilot/sessions/${sessionId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ content, language }),
+    }),
+
+  approveDraft: (draftId: string, notes?: string): Promise<{ status: string; draft_id: string; approved_at: string; message: string }> =>
+    request<{ status: string; draft_id: string; approved_at: string; message: string }>(
+      `/api/v1/copilot/drafts/${draftId}/approve`,
+      {
+        method: "POST",
+        body: JSON.stringify({ notes }),
+      }
+    ),
+
+  rejectDraft: (draftId: string, reason?: string): Promise<{ status: string; draft_id: string; reason: string }> =>
+    request<{ status: string; draft_id: string; reason: string }>(
+      `/api/v1/copilot/drafts/${draftId}/reject`,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }
+    ),
+
+  deleteMemory: (): Promise<{ status: string; message: string; cognee_cleared: boolean }> =>
+    request<{ status: string; message: string; cognee_cleared: boolean }>("/api/v1/copilot/memory", {
+      method: "DELETE",
+    }),
+};
+
+
 function _mockChatFallback(question: string): string {
   const q = question.toLowerCase().trim();
 
