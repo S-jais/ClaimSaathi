@@ -82,30 +82,81 @@ export default function ClaimReadinessPage() {
     );
   }
 
-  const docTranslations: Record<string, { label: string; gap?: string }> = {
+  const docTranslations: Record<
+    string,
+    { label: { en: string; hi: string; hinglish: string }; gap?: { en: string; hi: string; hinglish: string } }
+  > = {
     discharge_summary: {
-      label: "डिस्चार्ज सारांश",
-      gap: "अस्पताल द्वारा जारी मूल डिस्चार्ज सारांश अनिवार्य है।",
+      label: {
+        en: "Discharge Summary",
+        hi: "डिस्चार्ज सारांश",
+        hinglish: "Discharge Summary",
+      },
+      gap: {
+        en: "Original hospital discharge summary is mandatory.",
+        hi: "अस्पताल द्वारा जारी मूल डिस्चार्ज सारांश अनिवार्य है।",
+        hinglish: "Hospital dwara original discharge summary zaroori hai.",
+      },
     },
     hospital_bill: {
-      label: "अंतिम अस्पताल बिल",
-      gap: "विस्तृत मद-वार अस्पताल बिल संलग्न किया जाना आवश्यक है।",
+      label: {
+        en: "Final Hospital Bill",
+        hi: "अंतिम अस्पताल बिल",
+        hinglish: "Final Hospital Bill",
+      },
+      gap: {
+        en: "Itemized break-up bill with receipts required.",
+        hi: "विस्तृत मद-वार अस्पताल बिल संलग्न किया जाना आवश्यक है।",
+        hinglish: "Itemized break-up bill attach karna zaroori hai.",
+      },
     },
     claim_form: {
-      label: "हस्ताक्षरित क्लेम फॉर्म",
-      gap: "बीमित व्यक्ति एवं चिकित्सक द्वारा हस्ताक्षरित क्लेम फॉर्म आवश्यक है।",
+      label: {
+        en: "Signed Claim Form",
+        hi: "हस्ताक्षरित क्लेम फॉर्म",
+        hinglish: "Signed Claim Form",
+      },
+      gap: {
+        en: "Claim form signed by insured and treating doctor.",
+        hi: "बीमित व्यक्ति एवं चिकित्सक द्वारा हस्ताक्षरित क्लेम फॉर्म आवश्यक है।",
+        hinglish: "Insured aur doctor dono ka signed claim form zaroori hai.",
+      },
     },
     policy: {
-      label: "पॉलिसी दस्तावेज़ / हेल्थ कार्ड",
-      gap: "सक्रिय पॉलिसी अनुसूची अथवा ई-हेल्थ कार्ड संलग्न करें।",
+      label: {
+        en: "Policy Schedule / Health Card",
+        hi: "पॉलिसी दस्तावेज़ / हेल्थ कार्ड",
+        hinglish: "Policy Schedule / Health Card",
+      },
+      gap: {
+        en: "Active policy certificate or digital health card.",
+        hi: "सक्रिय पॉलिसी अनुसूची अथवा ई-हेल्थ कार्ड संलग्न करें।",
+        hinglish: "Active policy copy ya health card attach karein.",
+      },
     },
     prescription: {
-      label: "पर्चे एवं फार्मेसी बिल",
-      gap: "चिकित्सक के पर्चे और संगत दवा बिल आवश्यक हैं।",
+      label: {
+        en: "Doctor Prescriptions & Pharmacy Bills",
+        hi: "पर्चे एवं फार्मेसी बिल",
+        hinglish: "Prescriptions & Pharmacy Bills",
+      },
+      gap: {
+        en: "Treating physician prescriptions matching chemist bills.",
+        hi: "चिकित्सक के पर्चे और संगत दवा बिल आवश्यक हैं।",
+        hinglish: "Doctor ke prescription aur medicine bills match hone chahiye.",
+      },
     },
     consultation_notes: {
-      label: "परामर्श / ओपीडी नोट्स",
-      gap: "अस्पताल में भर्ती से पूर्व के परामर्श नोट्स आवश्यक हैं।",
+      label: {
+        en: "Pre-Hospitalization OPD Notes",
+        hi: "परामर्श / ओपीडी नोट्स",
+        hinglish: "Consultation / OPD Notes",
+      },
+      gap: {
+        en: "First consultation notes leading to hospital admission.",
+        hi: "अस्पताल में भर्ती से पूर्व के परामर्श नोट्स आवश्यक हैं।",
+        hinglish: "Admission se pehle ke initial OPD notes zaroori hain.",
+      },
     },
   };
 
@@ -182,8 +233,8 @@ export default function ClaimReadinessPage() {
                   </span>
                   <span className={`mistral-badge ${result.is_ready ? "badge-ready" : "badge-warning"}`}>
                     {result.is_ready 
-                      ? (lang === "hi" ? "जमा करने हेतु तैयार" : "Ready to Submit")
-                      : (lang === "hi" ? `${result.missing_mandatory.length || 1} कमी पाई गई` : `${result.missing_mandatory.length || 1} Gate Unmet`)}
+                      ? t("readiness.statusReady", "Ready to Submit")
+                      : t("readiness.statusDeficient", "1 Critical Gap")}
                   </span>
                 </div>
                 <div className="mistral-progress-track" style={{ marginTop: "0.75rem" }}>
@@ -193,34 +244,36 @@ export default function ClaimReadinessPage() {
 
               <div className="mistral-cell">
                 <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>
-                  {lang === "hi" ? "दस्तावेज़ आवश्यकताएं" : "Document Requirements"}
+                  {t("readiness.docRequirements", "Document Requirements")}
                 </p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
                   <span className="font-mistral" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--text-primary)" }}>
                     {result.requirements.filter((r) => r.is_satisfied).length} / {result.requirements.length}
                   </span>
                   <span className="text-eyebrow" style={{ color: "var(--text-secondary)" }}>
-                    {lang === "hi" ? "स्वीकार्य सत्यापित" : "Verified Admissible"}
+                    {t("readiness.verifiedAdmissible", "Verified Admissible")}
                   </span>
                 </div>
                 <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "0.5rem" }}>
                   {result.missing_mandatory.length === 0
-                    ? (lang === "hi" ? "सभी अनिवार्य दस्तावेज़ पूर्ण हैं" : "All mandatory files verified")
-                    : `${result.missing_mandatory.length} mandatory item(s) pending`}
+                    ? (lang === "hi" ? "सभी अनिवार्य दस्तावेज़ पूर्ण हैं" : lang === "hinglish" ? "Sabhi zaroori documents poore hain" : "All mandatory files verified")
+                    : (lang === "hi" ? `${result.missing_mandatory.length} अनिवार्य दस्तावेज़ शेष` : lang === "hinglish" ? `${result.missing_mandatory.length} zaroori documents baki hain` : `${result.missing_mandatory.length} mandatory item(s) pending`)}
                 </p>
               </div>
 
               <div className="mistral-cell">
                 <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>
-                  {lang === "hi" ? "अगला सुधारात्मक कदम" : "Adjudication Route"}
+                  {t("readiness.nextRemediation", "Next Remediation Step")}
                 </p>
                 <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
-                  {result.is_ready ? "Submit to TPA / Insurer" : "Fulfill Pending Checkpoints"}
+                  {result.is_ready 
+                    ? (lang === "hi" ? "TPA / बीमाकर्ता को जमा करें" : lang === "hinglish" ? "TPA / Insurer ko submit karein" : "Submit to TPA / Insurer")
+                    : (lang === "hi" ? "लंबित चेकपॉइंट पूर्ण करें" : lang === "hinglish" ? "Baki checkpoints poore karein" : "Fulfill Pending Checkpoints")}
                 </p>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
                   {result.is_ready
-                    ? "Your dossier is 100% compliant with standard IRDAI submission mandates."
-                    : "Upload missing items below or re-audit after resolving discrepancy flags."}
+                    ? (lang === "hi" ? "आपका डोजियर मानक IRDAI सबमिशन नियमों के 100% अनुरूप है।" : lang === "hinglish" ? "Aapka dossier IRDAI submission rules ke 100% anuroop hai." : "Your dossier is 100% compliant with standard IRDAI submission mandates.")
+                    : (lang === "hi" ? "नीचे अनुपलब्ध दस्तावेज़ अपलोड करें या विसंगतियों को हल करने के बाद पुनः जांचें।" : lang === "hinglish" ? "Neeche missing items upload karein ya discrepancy theek karke re-audit karein." : "Upload missing items below or re-audit after resolving discrepancy flags.")}
                 </p>
               </div>
             </div>
@@ -274,10 +327,10 @@ export default function ClaimReadinessPage() {
           {/* Requirements Checklist Header */}
           <div className="mistral-cell-header">
             <span className="text-eyebrow">
-              {lang === "hi" ? "वस्तुनिष्ठ चेकलिस्ट · स्वीकार्यता मानक" : "Mandatory Checklist · Admissibility Gates"}
+              {t("readiness.checklistHeader", "Mandatory Checklist · Admissibility Gates")}
             </span>
             <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
-              {lang === "hi" ? "पायथन नियम इंजन" : "Server-Side Verification Engine"}
+              {t("readiness.rulesEngineLabel", "Server-Side Verification Engine")}
             </span>
           </div>
 
@@ -285,13 +338,9 @@ export default function ClaimReadinessPage() {
           {result && (
             <div className="divide-grid-y">
               {result.requirements.map((req) => {
-                const label = (lang === "hi" && docTranslations[req.requirement_type]?.label)
-                  ? docTranslations[req.requirement_type].label
-                  : req.label;
-
-                const gap = (lang === "hi" && docTranslations[req.requirement_type]?.gap)
-                  ? docTranslations[req.requirement_type].gap
-                  : req.gap_reason;
+                const translationEntry = docTranslations[req.requirement_type];
+                const label = translationEntry?.label?.[lang] || req.label;
+                const gap = translationEntry?.gap?.[lang] || req.gap_reason;
 
                 const itemStatus = req.status || (req.is_satisfied ? "VERIFIED" : "MISSING");
 
@@ -331,7 +380,7 @@ export default function ClaimReadinessPage() {
                           <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{label}</span>
                           {req.is_mandatory && (
                             <span className="mistral-badge" style={{ fontSize: "0.65rem", padding: "1px 5px" }}>
-                              {lang === "hi" ? "अनिवार्य" : "MANDATORY"}
+                              {t("readiness.mandatoryBadge", "MANDATORY")}
                             </span>
                           )}
                           <span
@@ -369,7 +418,9 @@ export default function ClaimReadinessPage() {
                         style={{ fontSize: "0.75rem", padding: "0.3rem 0.65rem" }}
                         id={`upload-btn-${req.requirement_type}`}
                       >
-                        {req.is_satisfied ? "Replace" : "Upload"}
+                        {req.is_satisfied 
+                          ? (lang === "hi" ? "बदलें" : lang === "hinglish" ? "Badlein" : "Replace")
+                          : (lang === "hi" ? "अपलोड" : lang === "hinglish" ? "Upload" : "Upload")}
                       </button>
                     </div>
                   </div>
@@ -414,7 +465,7 @@ export default function ClaimReadinessPage() {
           {/* Action Footer */}
           <div className="border-t-grid" style={{ padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             <Link href="/dashboard" className="btn-mistral-outline">
-              <PixelArrowLeft size={16} /> {lang === "hi" ? "डैशबोर्ड" : "Dashboard"}
+              <PixelArrowLeft size={16} /> {lang === "hi" ? "डैशबोर्ड" : lang === "hinglish" ? "Dashboard" : "Dashboard"}
             </Link>
 
             <Link

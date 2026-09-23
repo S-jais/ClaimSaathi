@@ -116,7 +116,7 @@ export default function DashboardPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
                   <span className="text-eyebrow">{t("dashboard.workspace", "WORKSPACE / CLAIMS PORTFOLIO")}</span>
                   <span className="mistral-badge badge-ready" style={{ padding: "1px 6px" }}>
-                    ACTIVE ACCOUNT
+                    {t("dashboard.activeAccount", "ACTIVE ACCOUNT")}
                   </span>
                 </div>
                 <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                     onClick={() => setShowAddModal(true)}
                     className="btn-mistral-solid"
                   >
-                    + Register New Claim <PixelArrowRight size={16} />
+                    {t("dashboard.registerNewClaim", "+ Register New Claim")} <PixelArrowRight size={16} />
                   </button>
                 )}
               </div>
@@ -179,7 +179,7 @@ export default function DashboardPage() {
               <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "0.25rem" }}>
                 {claimList.length > 0
                   ? (claimList[0].hospital_name || "Health Insurance Portfolio")
-                  : "No claims filed yet"}
+                  : t("dashboard.noClaimsYet", "No claims filed yet")}
               </p>
             </div>
 
@@ -190,7 +190,7 @@ export default function DashboardPage() {
                   {claimList.length > 0 ? `${claimList[0].readiness_score || 85}%` : "100%"}
                 </span>
                 <span className={`mistral-badge ${claimList.length > 0 ? "badge-warning" : "badge-ready"}`} style={{ fontSize: "0.65rem" }}>
-                  {claimList.length > 0 ? t("dashboard.documentGap", "1 Document Gap") : "Ready for Upload"}
+                  {claimList.length > 0 ? t("dashboard.documentGap", "1 Document Gap") : t("dashboard.readyForUpload", "Ready for Upload")}
                 </span>
               </div>
               <div className="mistral-progress-track" style={{ marginTop: "0.5rem" }}>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
               <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("dashboard.statutoryProtection", "Statutory Protection")}</p>
               <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
                 <span className="font-mistral" style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--mistral-emerald)" }}>
-                  60-Month Cap
+                  {t("dashboard.sixtyMonthCap", "60-Month Cap")}
                 </span>
                 <span className="mistral-badge badge-ready" style={{ fontSize: "0.65rem" }}>
                   {t("dashboard.moratoriumActive", "Moratorium Active")}
@@ -228,7 +228,7 @@ export default function DashboardPage() {
               className="btn-mistral-outline"
               style={{ fontSize: "0.75rem", padding: "0.3rem 0.75rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
             >
-              <span>+ Register Claim</span>
+              <span>{t("dashboard.registerClaim", "+ Register Claim")}</span>
             </button>
           </div>
 
@@ -238,13 +238,13 @@ export default function DashboardPage() {
               <div style={{ padding: "4rem 2rem", textAlign: "center", backgroundColor: "var(--surface-brand-secondary)" }}>
                 <div style={{ maxWidth: "560px", margin: "0 auto" }}>
                   <p className="text-eyebrow" style={{ color: "var(--mistral-flame)", marginBottom: "0.5rem" }}>
-                    YOUR CLAIM WORKSPACE IS ACTIVE
+                    {t("dashboard.workspaceActive", "YOUR CLAIM WORKSPACE IS ACTIVE")}
                   </p>
                   <h3 className="text-h3" style={{ marginBottom: "0.75rem" }}>
-                    No Claims Registered Yet
+                    {t("dashboard.noClaimsRegistered", "No Claims Registered Yet")}
                   </h3>
                   <p style={{ color: "var(--text-secondary)", fontSize: "0.925rem", lineHeight: 1.6, marginBottom: "1.75rem" }}>
-                    Welcome to your personal ClaimSaathi workspace, {user?.full_name?.split(" ")[0] || "Policyholder"}. Register an active or repudiated health insurance claim to check mandatory hospital documents, decode rejection clauses against IRDAI regulations, and build legally grounded grievance letters.
+                    {t("dashboard.emptyDesc", "Welcome to your personal ClaimSaathi workspace, {name}. Register an active or repudiated health insurance claim to check mandatory hospital documents, decode rejection clauses against IRDAI regulations, and build legally grounded grievance letters.").replace("{name}", user?.full_name?.split(" ")[0] || "Policyholder")}
                   </p>
                   <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
                     <button
@@ -252,14 +252,14 @@ export default function DashboardPage() {
                       onClick={() => setShowAddModal(true)}
                       className="btn-mistral-solid"
                     >
-                      + Register New Claim <PixelArrowRight size={16} />
+                      {t("dashboard.registerNewClaim", "+ Register New Claim")} <PixelArrowRight size={16} />
                     </button>
                     <button
                       type="button"
                       onClick={handleLoadSample}
                       className="btn-mistral-outline"
                     >
-                      ⚡ Load Sample Case to Explore
+                      {t("dashboard.loadSample", "⚡ Load Sample Case to Explore")}
                     </button>
                   </div>
                 </div>
@@ -479,8 +479,8 @@ export default function DashboardPage() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
               <div>
-                <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>NEW CLAIM REGISTRATION</span>
-                <h3 className="text-h3" style={{ marginTop: "0.25rem" }}>Register Health Claim</h3>
+                <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>{t("dashboard.workspaceActive", "NEW CLAIM REGISTRATION")}</span>
+                <h3 className="text-h3" style={{ marginTop: "0.25rem" }}>{t("dashboard.modalNewClaimTitle", "Register Health Claim")}</h3>
               </div>
               <button
                 type="button"
@@ -501,12 +501,12 @@ export default function DashboardPage() {
             <form onSubmit={handleCreateClaim} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               <div>
                 <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
-                  Hospital Name *
+                  {t("dashboard.hospitalNameLabel", "Hospital Name")} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Max Super Speciality, Delhi / Fortis Hospital"
+                  placeholder={t("dashboard.hospitalNamePlaceholder", "e.g. Max Super Speciality, Delhi / Fortis Hospital")}
                   value={hospitalName}
                   onChange={(e) => setHospitalName(e.target.value)}
                   className="mistral-input"
@@ -515,11 +515,11 @@ export default function DashboardPage() {
 
               <div>
                 <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
-                  Procedure / Treatment
+                  {t("dashboard.diagnosisLabel", "Procedure / Treatment")}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Total Knee Arthroplasty / Cardiac Stent Placement"
+                  placeholder={t("dashboard.diagnosisPlaceholder", "e.g. Total Knee Arthroplasty / Cardiac Stent Placement")}
                   value={diagnosis}
                   onChange={(e) => setDiagnosis(e.target.value)}
                   className="mistral-input"
@@ -529,12 +529,12 @@ export default function DashboardPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div>
                   <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
-                    Claim Amount (₹) *
+                    {t("dashboard.claimAmountLabel", "Claim Amount (₹)")} *
                   </label>
                   <input
                     type="number"
                     required
-                    placeholder="e.g. 150000"
+                    placeholder={t("dashboard.claimAmountPlaceholder", "e.g. 150000")}
                     value={claimAmount}
                     onChange={(e) => setClaimAmount(e.target.value)}
                     className="mistral-input"
@@ -543,7 +543,7 @@ export default function DashboardPage() {
 
                 <div>
                   <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
-                    Claim Type
+                    {t("dashboard.claimTypeLabel", "Claim Type")}
                   </label>
                   <select
                     value={claimType}
@@ -551,15 +551,15 @@ export default function DashboardPage() {
                     className="mistral-input"
                     style={{ height: "42px" }}
                   >
-                    <option value="reimbursement">Reimbursement</option>
-                    <option value="cashless_denial">Cashless Denial</option>
+                    <option value="reimbursement">{t("dashboard.typeReimbursement", "Reimbursement")}</option>
+                    <option value="cashless_denial">{t("dashboard.typeCashless", "Cashless Denial")}</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
-                  Admission Date
+                  {t("dashboard.admissionDateLabel", "Admission Date")}
                 </label>
                 <input
                   type="date"
@@ -575,14 +575,14 @@ export default function DashboardPage() {
                   onClick={() => setShowAddModal(false)}
                   className="btn-mistral-outline"
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submittingClaim}
                   className="btn-mistral-solid"
                 >
-                  {submittingClaim ? "Registering..." : "Submit Claim"}
+                  {submittingClaim ? t("dashboard.submittingClaim", "Registering...") : t("dashboard.submitClaimBtn", "Submit Claim")}
                 </button>
               </div>
             </form>

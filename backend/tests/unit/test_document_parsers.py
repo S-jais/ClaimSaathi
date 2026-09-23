@@ -82,7 +82,7 @@ def test_txt_discharge_summary_parsing():
     txt_content = (
         "APOLLO HOSPITALS BENGALURU\n"
         "DISCHARGE SUMMARY\n"
-        "Patient Name: Ramesh Kumar\n"
+        "Patient Name: Siddhartha Jaiswal\n"
         "Admission Date: 10-Feb-2026\n"
         "Discharge Date: 14-Feb-2026\n"
         "DIAGNOSIS: Severe Bilateral Osteoarthritis Grade IV\n"
@@ -91,7 +91,7 @@ def test_txt_discharge_summary_parsing():
 
     result = parse_txt_document(txt_content)
     assert result["doc_type"] == "DISCHARGE_SUMMARY"
-    assert result["patient_name"] == "Ramesh Kumar"
+    assert result["patient_name"] == "Siddhartha Jaiswal"
     assert "apollo" in result["hospital_name"].lower()
     assert "10-Feb-2026" in result["dates_found"]
     assert "Severe Bilateral Osteoarthritis Grade IV" in result["diagnosis_text"]

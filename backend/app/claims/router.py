@@ -161,7 +161,7 @@ async def _resolve_claim(db: AsyncSession, user: User, claim_id_str: str) -> Cla
             claim_type="reimbursement",
             claim_amount=18450000,
             hospital_name="Apollo Hospital",
-            patient_name=user.full_name or "Ramesh Kumar",
+            patient_name=user.full_name or "Siddhartha Jaiswal",
             diagnosis="Acute Medical Treatment",
             status="rejected",
             is_demo=True,

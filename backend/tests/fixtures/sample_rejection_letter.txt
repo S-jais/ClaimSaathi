@@ -8,7 +8,7 @@ To:
 Policyholder / Claimant
 Policy Number: SH-884920
 Claim Reference: CLM-20491
-Patient Name: Ramesh Kumar
+Patient Name: Siddhartha Jaiswal
 Hospital: Apollo Hospital, Bengaluru
 Claimed Amount: INR 1,84,500.00
 

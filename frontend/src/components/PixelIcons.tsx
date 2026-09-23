@@ -188,3 +188,28 @@ export function PixelMoon({ size = 18, className = "" }: { size?: number; classN
     </svg>
   );
 }
+
+export function PixelSettings({ size = 18, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="9" y="2" width="6" height="3" fill="currentColor" />
+      <rect x="9" y="19" width="6" height="3" fill="currentColor" />
+      <rect x="2" y="9" width="3" height="6" fill="currentColor" />
+      <rect x="19" y="9" width="3" height="6" fill="currentColor" />
+      <rect x="5" y="5" width="4" height="4" fill="currentColor" />
+      <rect x="15" y="5" width="4" height="4" fill="currentColor" />
+      <rect x="5" y="15" width="4" height="4" fill="currentColor" />
+      <rect x="15" y="15" width="4" height="4" fill="currentColor" />
+      <rect x="7" y="7" width="10" height="10" fill="currentColor" />
+      <rect x="10" y="10" width="4" height="4" fill="var(--surface-brand-primary, #0c1017)" />
+    </svg>
+  );
+}

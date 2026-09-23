@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 import datetime
+import json
 from pathlib import Path
 import re
 from typing import Any
@@ -28,6 +29,7 @@ from app.ai.guardrails import enforce_copilot_guardrails
 from app.auth.models import User
 from app.claims.models import Claim, ClaimEvent
 from app.copilot.models import CopilotSession, CopilotMessage, CopilotDraft
+from app.speech.spoken import to_spoken, verify_numeric_consistency
 from app.copilot.schemas import (
     CitationItem,
     CopilotResponsePayload,
@@ -142,16 +144,8 @@ def parse_indian_number_words(text: str) -> int | None:
 
 
 def generate_spoken_text(reply: str, language: str = "en") -> str:
-    """Produce concise, natural speech version without markdown or code formatting."""
-    clean = re.sub(r"\*\*|\*|#|`", "", reply)
-    clean = re.sub(r"\[(FACT|INTERPRETATION|RECOMMENDATION).*?\]", "", clean, flags=re.IGNORECASE)
-    clean = re.sub(r"\n+", " ", clean).strip()
-    clean = clean.replace("₹", "rupees ")
-    sentences = [s.strip() for s in re.split(r"[.!?।]", clean) if s.strip()]
-    spoken = ". ".join(sentences[:3])
-    if spoken and not spoken.endswith((".", "।")):
-        spoken += "."
-    return spoken
+    """Produce concise, natural speech version using deterministic spoken pipeline."""
+    return to_spoken(reply, language=language)
 
 
 class CopilotOrchestrator:
@@ -287,14 +281,21 @@ class CopilotOrchestrator:
         user_message: str,
         language: str = "en",
         mode: str = "text",
+        input_source: str = "text",
+        transcript_confidence: float | None = None,
     ) -> CopilotResponsePayload:
         """Executes full orchestrated turn synchronously and returns structured payload."""
         # 1. Load case state & tools
         case_state = await tool_get_case_state(db, claim)
         deadlines = tool_compute_deadlines(claim)
 
-        # 2. Cognee recall
-        cognee_facts = await self.cognee.recall(str(user.id), user_message, limit=3)
+        # 2. Cognee recall (skip in voice mode unless user explicitly queries memory to save latency)
+        cognee_facts = []
+        if mode != "voice" or any(w in user_message.lower() for w in ["pehle", "earlier", "remember", "previous"]):
+            try:
+                cognee_facts = await self.cognee.recall(str(user.id), user_message, limit=3)
+            except Exception as e:
+                logger.debug("cognee_recall_skipped", error=str(e))
 
         # 3. State transition
         new_stage = self._determine_stage_transition(session.stage, user_message, case_state)
@@ -312,6 +313,10 @@ class CopilotOrchestrator:
                 db.add(event)
                 await db.flush()
             except Exception as e:
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass
                 logger.warning("stage_transition_event_db_fallback", error=str(e))
 
         ui_stage = get_ui_stage(session.stage)
@@ -421,23 +426,95 @@ class CopilotOrchestrator:
         )
 
         citation_ids = [c.id for c in citations]
+        model_tier = "flash" if (mode == "voice" or len(user_message) < 150) else "pro"
         raw_text = await self.gemini.generate(
             prompt=prompt,
-            model_tier="flash" if len(user_message) < 150 else "pro",
+            model_tier=model_tier,
             system_instruction=system_prompt,
             temperature=0.2,
         )
 
-        # Parse sections from generated text
-        sections = self._parse_structured_sections(raw_text, citation_ids)
-        spoken_text = generate_spoken_text(raw_text, detected_lang)
+        # Check if raw_text is a JSON object produced per the system schema
+        clean_reply = raw_text
+        model_spoken_text = ""
+        sections = None
+
+        try:
+            trimmed = raw_text.strip()
+            if trimmed.startswith("```json"):
+                trimmed = trimmed[7:]
+            elif trimmed.startswith("```"):
+                trimmed = trimmed[3:]
+            if trimmed.endswith("```"):
+                trimmed = trimmed[:-3]
+            trimmed = trimmed.strip()
+
+            if trimmed.startswith("{") and trimmed.endswith("}"):
+                data = None
+                try:
+                    data = json.loads(trimmed)
+                except Exception:
+                    # Attempt simple fix for missing commas between string values and next keys
+                    try:
+                        fixed = re.sub(r'("(?:\\.|[^"\\])*")\s*\n\s*(")', r'\1,\n\2', trimmed)
+                        data = json.loads(fixed)
+                    except Exception:
+                        pass
+
+                if data:
+                    msg = data.get("message") or data.get("reply")
+                    if msg:
+                        clean_reply = msg
+                    model_spoken_text = data.get("spoken_text", "")
+                    if isinstance(data.get("quick_replies"), list) and data["quick_replies"]:
+                        quick_replies = data["quick_replies"]
+
+                    if "sections" in data and isinstance(data["sections"], dict):
+                        sec_dict = data["sections"]
+                        f_list = sec_dict.get("facts", [])
+                        i_list = sec_dict.get("interpretation") or sec_dict.get("interpretations", [])
+                        r_list = sec_dict.get("recommendation") or sec_dict.get("recommendations", [])
+
+                        parsed_facts = []
+                        for idx, item in enumerate(f_list if isinstance(f_list, list) else [f_list]):
+                            txt = item.get("text", str(item)) if isinstance(item, dict) else str(item)
+                            parsed_facts.append(FactItem(id=f"f{idx+1}", text=txt, citations=citation_ids[:2]))
+
+                        parsed_interps = []
+                        for idx, item in enumerate(i_list if isinstance(i_list, list) else [i_list]):
+                            txt = item.get("text", str(item)) if isinstance(item, dict) else str(item)
+                            parsed_interps.append(InterpretationItem(id=f"i{idx+1}", text=txt))
+
+                        parsed_recoms = []
+                        for idx, item in enumerate(r_list if isinstance(r_list, list) else [r_list]):
+                            txt = item.get("text", str(item)) if isinstance(item, dict) else str(item)
+                            parsed_recoms.append(RecommendationItem(id=f"r{idx+1}", text=txt))
+
+                        sections = StructuredSections(
+                            facts=parsed_facts,
+                            interpretations=parsed_interps,
+                            recommendations=parsed_recoms,
+                        )
+                else:
+                    # Regex fallback if json parsing fails completely
+                    m_msg = re.search(r'"message"\s*:\s*"((?:\\.|[^"\\])*)"', trimmed)
+                    if m_msg:
+                        clean_reply = m_msg.group(1).encode("utf-8").decode("unicode_escape", errors="ignore")
+                    m_spk = re.search(r'"spoken_text"\s*:\s*"((?:\\.|[^"\\])*)"', trimmed)
+                    if m_spk:
+                        model_spoken_text = m_spk.group(1).encode("utf-8").decode("unicode_escape", errors="ignore")
+        except Exception as e:
+            logger.debug("orchestrator_json_unpack_skipped", error=str(e))
+
+        if not sections:
+            sections = self._parse_structured_sections(clean_reply, citation_ids)
 
         payload_dict: dict[str, Any] = {
             "stage": session.stage,
             "ui_stage": ui_stage,
-            "reply": raw_text,
+            "reply": clean_reply,
             "language": detected_lang,
-            "spoken_text": spoken_text,
+            "spoken_text": model_spoken_text,
             "sections": sections.model_dump(),
             "citations": [c.model_dump() for c in citations],
             "draft_card": draft_card.model_dump() if draft_card else None,
@@ -446,8 +523,41 @@ class CopilotOrchestrator:
             "warnings": [],
         }
 
-        # 7. Guardrail validation
+        # 7. Guardrail validation FIRST on text output
         guarded_dict = enforce_copilot_guardrails(payload_dict)
+        validated_reply = guarded_dict.get("reply", "")
+
+        # 8. Deterministic to_spoken on VALIDATED reply
+        if model_spoken_text:
+            spoken_text = to_spoken(model_spoken_text, language=detected_lang)
+        else:
+            spoken_text = to_spoken(validated_reply, language=detected_lang)
+
+        # 9. Verify numeric consistency between spoken text and validated reply
+        if not verify_numeric_consistency(spoken_text, validated_reply):
+            logger.warning("spoken_numeric_inconsistency_detected", spoken=spoken_text)
+            if detected_lang in {"hi", "hinglish"}:
+                spoken_text = "मैंने आपकी क्लेम राशि और स्थिति का विवरण स्क्रीन पर दिखा दिया है।"
+            else:
+                spoken_text = "I have displayed your claim amounts and status details on the screen."
+
+        # 10. Read-back check for voice turns with critical numbers or low confidence
+        read_back_required = False
+        if mode == "voice" or input_source == "voice":
+            if (transcript_confidence is not None and transcript_confidence < 0.85) or any(
+                ch.isdigit() for ch in user_message
+            ):
+                read_back_required = True
+
+        # 11. Priority check
+        speak_priority = "normal"
+        if any(w in user_message.lower() for w in ["emergency", "112", "heart attack", "accident", "emergency admit"]):
+            speak_priority = "urgent"
+
+        guarded_dict["spoken_text"] = spoken_text
+        guarded_dict["read_back_required"] = read_back_required
+        guarded_dict["speak_priority"] = speak_priority
+
         final_payload = CopilotResponsePayload.model_validate(guarded_dict)
 
         # 8. Persistence
@@ -471,6 +581,10 @@ class CopilotOrchestrator:
             db.add(db_asst_msg)
             await db.commit()
         except Exception as e:
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             logger.warning("copilot_db_persistence_fallback", error=str(e))
 
         # Asynchronously remember extracted facts in Cognee

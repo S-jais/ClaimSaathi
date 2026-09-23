@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { type BillAuditReport, type AuditedLineItem, claims } from "@/lib/api";
 import { PixelAlert, PixelCheck, PixelArrowRight } from "@/components/PixelIcons";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface BillAuditCardProps {
   claimId: string;
@@ -17,6 +18,7 @@ export function BillAuditCard({
   onAuditUpdated,
   onRequestUpload,
 }: BillAuditCardProps) {
+  const { t, lang } = useLanguage();
   const [items, setItems] = useState<AuditedLineItem[]>(auditReport.items || []);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>("");
@@ -29,7 +31,7 @@ export function BillAuditCard({
   }, [auditReport]);
 
   const formatRupees = (paise: number) => {
-    return `₹${(paise / 100).toLocaleString("en-IN", {
+    return `₹${(paise / 100).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
@@ -96,14 +98,14 @@ export function BillAuditCard({
             <span className="mistral-badge badge-ready">Catalog v{auditReport.rules_version}</span>
           </div>
           <h2 style={{ fontSize: "1.35rem", fontWeight: 700 }}>
-            Hospital Bill Audit & Indicative Payable Waterfall
+            {t("billAudit.title", "Hospital Bill Audit & Indicative Payable Waterfall")}
           </h2>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           {onRequestUpload && (
             <button onClick={onRequestUpload} className="btn-mistral-solid" style={{ fontSize: "0.85rem", padding: "0.4rem 0.85rem" }}>
-              + Upload New Bill
+              {t("readiness.uploadBtn", "+ Upload New Bill")}
             </button>
           )}
         </div>
@@ -154,7 +156,7 @@ export function BillAuditCard({
               textAlign: "center",
             }}
           >
-            <p className="text-eyebrow" style={{ color: "var(--status-danger-text)" }}>Non-Payable</p>
+            <p className="text-eyebrow" style={{ color: "var(--status-danger-text)" }}>{t("billAudit.nonPayableAmount", "Non-Payable")}</p>
             <p style={{ fontWeight: 700, fontSize: "1.1rem" }}>
               {formatRupees(auditReport.commonly_non_payable_paise)}
             </p>
@@ -169,7 +171,7 @@ export function BillAuditCard({
               textAlign: "center",
             }}
           >
-            <p className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>Needs Review</p>
+            <p className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>{t("billAudit.statusQuestioned", "Needs Review")}</p>
             <p style={{ fontWeight: 700, fontSize: "1.1rem" }}>
               {formatRupees(auditReport.needs_review_paise)}
             </p>

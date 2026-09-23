@@ -1259,6 +1259,10 @@ export interface CopilotPayload {
   stage: string;
   ui_stage: "Understand" | "Prepare" | "Resolve";
   reply: string;
+  spoken_text?: string;
+  language?: "en" | "hi" | "hinglish";
+  read_back_required?: boolean;
+  speak_priority?: "normal" | "urgent";
   sections: {
     facts: CopilotSectionFact[];
     interpretations: { id: string; text: string }[];
@@ -1306,10 +1310,25 @@ export const copilot = {
   getHistory: (sessionId: string): Promise<CopilotMessageData[]> =>
     request<CopilotMessageData[]>(`/api/v1/copilot/sessions/${sessionId}/messages`),
 
-  sendMessage: (sessionId: string, content: string, language: string = "en"): Promise<CopilotPayload> =>
+  sendMessage: (
+    sessionId: string,
+    content: string,
+    language: string = "en",
+    options?: {
+      mode?: "text" | "voice";
+      input_source?: "text" | "voice";
+      transcript_confidence?: number;
+    }
+  ): Promise<CopilotPayload> =>
     request<CopilotPayload>(`/api/v1/copilot/sessions/${sessionId}/messages`, {
       method: "POST",
-      body: JSON.stringify({ content, language }),
+      body: JSON.stringify({
+        content,
+        language,
+        mode: options?.mode || "text",
+        input_source: options?.input_source || "text",
+        transcript_confidence: options?.transcript_confidence,
+      }),
     }),
 
   approveDraft: (draftId: string, notes?: string): Promise<{ status: string; draft_id: string; approved_at: string; message: string }> =>
@@ -1334,6 +1353,98 @@ export const copilot = {
     request<{ status: string; message: string; cognee_cleared: boolean }>("/api/v1/copilot/memory", {
       method: "DELETE",
     }),
+};
+
+export interface VoiceConfigData {
+  enabled: boolean;
+  gemini_stt_available: boolean;
+  gemini_tts_available: boolean;
+  default_voice_hi: string;
+  default_voice_en: string;
+  max_seconds: number;
+}
+
+export interface VoiceTranscribeResponse {
+  text: string;
+  language: "en" | "hi" | "hinglish";
+  confidence: number;
+  low_confidence_spans: string[];
+  contains_amounts_or_dates: boolean;
+}
+
+export const voiceApi = {
+  getConfig: (): Promise<VoiceConfigData> =>
+    request<VoiceConfigData>("/api/v1/voice/config"),
+
+  transcribe: async (
+    audioBlob: Blob,
+    languageHint: string = "auto",
+    signal?: AbortSignal
+  ): Promise<VoiceTranscribeResponse> => {
+    const formData = new FormData();
+    formData.append("file", audioBlob, "recording.webm");
+    formData.append("language_hint", languageHint);
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/api/v1/voice/transcribe`, {
+      method: "POST",
+      headers,
+      body: formData,
+      signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Transcription failed" }));
+      throw new Error(err.detail || "Transcription failed");
+    }
+    return res.json();
+  },
+
+  speak: async (
+    text: string,
+    language: string = "hi",
+    voice?: string,
+    speed: number = 1.0,
+    signal?: AbortSignal
+  ): Promise<ArrayBuffer> => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/api/v1/voice/speak`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        text,
+        language,
+        voice,
+        speed,
+      }),
+      signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "TTS failed" }));
+      throw new Error(err.detail || "TTS failed");
+    }
+
+    const providerHeader = res.headers.get("x-speech-provider");
+    if (providerHeader === "mock") {
+      // Backend returned mock dummy tone; trigger high-quality BrowserTTS fallback
+      throw new Error("USE_BROWSER_TTS_FALLBACK");
+    }
+
+    return res.arrayBuffer();
+  },
 };
 
 

@@ -62,9 +62,9 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-1.5-pro"
-    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
-    GEMINI_REASONING_MODEL: str = "gemini-2.5-pro"
+    GEMINI_MODEL: str = "gemini-flash-lite-latest"
+    GEMINI_CHAT_MODEL: str = "gemini-flash-lite-latest"
+    GEMINI_REASONING_MODEL: str = "gemini-3.5-flash-lite"
 
     # --- Cognee Memory ---
     COGNEE_ENABLED: bool = False
@@ -75,6 +75,18 @@ class Settings(BaseSettings):
     CHAT_MAX_TOOL_CALLS: int = 5
     CHAT_HISTORY_TURNS: int = 12
     CHAT_RATE_LIMIT_PER_MIN: int = 20
+
+    # --- Voice Mode ---
+    VOICE_ENABLED: bool = True
+    GEMINI_STT_MODEL: str = "gemini-flash-lite-latest"
+    GEMINI_TTS_MODEL: str = "gemini-flash-lite-latest"
+    TTS_VOICE_HI: str = "Puck"
+    TTS_VOICE_EN: str = "Charon"
+    VOICE_MAX_SECONDS: int = 30
+    VOICE_RATE_LIMIT_PER_MIN: int = 12
+    TTS_MAX_CHARS: int = 800
+    VOICE_CACHE_TTL_SECONDS: int = 86400
+    STORE_AUDIO: bool = False
 
     # --- OCR ---
     OCR_ADAPTER: Literal["mock", "google_document_ai"] = "mock"

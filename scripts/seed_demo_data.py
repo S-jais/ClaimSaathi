@@ -1,6 +1,6 @@
 """
 scripts/seed_demo_data.py
-Seeds the demo dataset (Ramesh Kumar, CLM-20491) exactly as specified
+Seeds the demo dataset (Siddhartha Jaiswal, CLM-20491) exactly as specified
 in the master prompt Section 4.2.
 
 Usage:
@@ -45,12 +45,12 @@ def seed():
         VALUES (%s, %s, %s, %s, 'active', true, NOW(), NOW())
         ON CONFLICT (email) DO NOTHING
         RETURNING id
-    """, (demo_user_id, "ramesh.kumar@demo.claimsaathi.in", "Ramesh Kumar", hash_password("DemoPass@2026!")))
+    """, (demo_user_id, "siddhartha.jaiswal@demo.claimsaathi.in", "Siddhartha Jaiswal", hash_password("DemoPass@2026!")))
     row = cur.fetchone()
     if row:
         demo_user_id = row["id"]
     else:
-        cur.execute("SELECT id FROM users WHERE email = %s", ("ramesh.kumar@demo.claimsaathi.in",))
+        cur.execute("SELECT id FROM users WHERE email = %s", ("siddhartha.jaiswal@demo.claimsaathi.in",))
         demo_user_id = cur.fetchone()["id"]
 
     # Assign customer role
@@ -95,14 +95,14 @@ def seed():
         "Apollo Hospitals, Chennai",
         date(2026, 1, 10),
         date(2026, 1, 14),
-        "Ramesh Kumar",
+        "Siddhartha Jaiswal",
         "Acute Appendicitis (K35.80) — Laparoscopic Appendectomy",
         75,  # 75% — missing consultation_notes
     ))
 
     # --- Documents (all present except consultation_notes — the demo gap) ---
     doc_types = [
-        ("policy", "completed", "policy_ramesh_star_health.pdf"),
+        ("policy", "completed", "policy_siddhartha_star_health.pdf"),
         ("claim_form", "completed", "claim_form_signed.pdf"),
         ("hospital_bill", "completed", "apollo_hospitals_bill_184500.pdf"),
         ("discharge_summary", "completed", "discharge_summary_jan14.pdf"),
@@ -154,7 +154,7 @@ def seed():
     print(f"""
 ✅ Demo data seeded successfully!
 
-   User:     Ramesh Kumar <ramesh.kumar@demo.claimsaathi.in>
+   User:     Siddhartha Jaiswal <siddhartha.jaiswal@demo.claimsaathi.in>
    Password: DemoPass@2026!
    Claim:    CLM-20491 — ₹1,84,500 (Apollo Hospitals, Chennai)
    Status:   Rejected

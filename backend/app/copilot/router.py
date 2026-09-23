@@ -59,8 +59,8 @@ async def get_copilot_user(
     if not await is_db_available():
         return User(
             id=uuid.uuid4(),
-            email="ramesh.kumar@demo.claimsaathi.in",
-            full_name="Ramesh Kumar",
+            email="siddhartha.jaiswal@demo.claimsaathi.in",
+            full_name="Siddhartha Jaiswal",
             status="active",
             is_demo=True,
         )
@@ -91,8 +91,8 @@ async def get_copilot_user(
         logger.warning("copilot_get_user_offline_fallback", error=str(e))
         return User(
             id=uuid.uuid4(),
-            email="ramesh.kumar@demo.claimsaathi.in",
-            full_name="Ramesh Kumar",
+            email="siddhartha.jaiswal@demo.claimsaathi.in",
+            full_name="Siddhartha Jaiswal",
             status="active",
             is_demo=True,
         )
@@ -219,33 +219,37 @@ async def get_session_messages(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retrieve history of turns for the given Copilot session."""
-    sess_stmt = select(CopilotSession).where(CopilotSession.id == session_id, CopilotSession.user_id == user.id)
-    sess_res = await db.execute(sess_stmt)
-    session = sess_res.scalar_one_or_none()
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    try:
+        sess_stmt = select(CopilotSession).where(CopilotSession.id == session_id, CopilotSession.user_id == user.id)
+        sess_res = await db.execute(sess_stmt)
+        session = sess_res.scalar_one_or_none()
+        if not session:
+            return []
 
-    msg_stmt = (
-        select(CopilotMessage)
-        .where(CopilotMessage.session_id == session_id)
-        .order_by(CopilotMessage.created_at.asc())
-    )
-    msg_res = await db.execute(msg_stmt)
-    messages = msg_res.scalars().all()
-
-    return [
-        CopilotMessageResponse(
-            id=m.id,
-            session_id=m.session_id,
-            role=m.role,
-            content=m.content,
-            structured_payload=CopilotResponsePayload.model_validate(m.structured_payload) if m.structured_payload else None,
-            tool_trace=m.tool_trace,
-            citations=m.citations,
-            created_at=m.created_at,
+        msg_stmt = (
+            select(CopilotMessage)
+            .where(CopilotMessage.session_id == session_id)
+            .order_by(CopilotMessage.created_at.asc())
         )
-        for m in messages
-    ]
+        msg_res = await db.execute(msg_stmt)
+        messages = msg_res.scalars().all()
+
+        return [
+            CopilotMessageResponse(
+                id=m.id,
+                session_id=m.session_id,
+                role=m.role,
+                content=m.content,
+                structured_payload=CopilotResponsePayload.model_validate(m.structured_payload) if m.structured_payload else None,
+                tool_trace=m.tool_trace,
+                citations=m.citations,
+                created_at=m.created_at,
+            )
+            for m in messages
+        ]
+    except Exception as e:
+        logger.warning("copilot_get_messages_offline_fallback", error=str(e))
+        return []
 
 
 @router.post("/sessions/{session_id}/messages")
@@ -286,7 +290,7 @@ async def send_message(
             claim_type="reimbursement",
             claim_amount=184500,
             hospital_name="Apollo Hospital",
-            patient_name=user.full_name or "Ramesh Kumar",
+            patient_name=user.full_name or "Siddhartha Jaiswal",
             status="rejected",
             readiness_score=85,
         )
@@ -326,6 +330,8 @@ async def send_message(
         user_message=body.content,
         language=body.language,
         mode=body.mode,
+        input_source=body.input_source,
+        transcript_confidence=body.transcript_confidence,
     )
     return payload
 

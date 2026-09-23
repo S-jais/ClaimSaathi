@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { auth, getHumanErrorMessage, subscribeColdStart } from "@/lib/api";
 import { MistralNavbar } from "@/components/MistralNavbar";
 import { PixelArrowRight } from "@/components/PixelIcons";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,16 +60,16 @@ export default function LoginPage() {
           <section className="border-b-grid" style={{ padding: "clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 3rem)" }}>
             <div style={{ maxWidth: "860px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-                <span className="text-eyebrow">Paytm AI Hackathon · Track 2</span>
+                <span className="text-eyebrow">{t("auth.track", "Paytm AI Hackathon · Track 2")}</span>
               </div>
 
               <h1 className="text-display" style={{ marginBottom: "1.25rem" }}>
-                Frontier claim intelligence.<br />
-                In your hands.
+                {t("auth.heroTitle", "Frontier claim intelligence.")}<br />
+                {t("auth.heroTitleLine2", "In your hands.")}
               </h1>
 
               <p style={{ fontSize: "clamp(1rem, 1.5vw, 1.25rem)", color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: "700px" }}>
-                We help policyholders navigate health claims, decode rejection notices, and construct legally grounded appeals with verifiable evidence — not guesswork.
+                {t("auth.heroDesc", "We help policyholders navigate health claims, decode rejection notices, and construct legally grounded appeals with verifiable evidence — not guesswork.")}
               </p>
 
               {/* Accent bars */}
@@ -85,41 +87,41 @@ export default function LoginPage() {
 
           {/* Two-Column Grid: Features Left, Auth Right */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", flex: 1 }}>
-            {/* Left Column: Mistral-style Platform Modules */}
+            {/* Left Column: Platform Modules */}
             <div className="divide-grid-y" style={{ borderRight: "1px solid var(--border-primary)" }}>
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>Module 01 / Pre-Submission</p>
-                <h3 className="text-h3" style={{ marginBottom: "0.5rem" }}>Claim Readiness Engine</h3>
+                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>{t("auth.module1Tag", "Module 01 / Pre-Submission")}</p>
+                <h3 className="text-h3" style={{ marginBottom: "0.5rem" }}>{t("auth.module1Title", "Claim Readiness Engine")}</h3>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                  Deterministic Python rule validator across 6 mandatory document categories (discharge summaries, itemized invoices, implant barcode stickers, ICPs). No hallucinated readiness scores.
+                  {t("auth.module1Desc", "Deterministic Python rule validator across 6 mandatory document categories (discharge summaries, itemized invoices, implant barcode stickers, ICPs). No hallucinated readiness scores.")}
                 </p>
                 <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <span className="mistral-badge">Deterministic Checklist</span>
-                  <span className="mistral-badge">Missing Gap Detection</span>
+                  <span className="mistral-badge">{t("auth.module1Badge1", "Deterministic Checklist")}</span>
+                  <span className="mistral-badge">{t("auth.module1Badge2", "Missing Gap Detection")}</span>
                 </div>
               </div>
 
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>Module 02 / Post-Repudiation</p>
-                <h3 className="text-h3" style={{ marginBottom: "0.5rem" }}>Rejection Decoder</h3>
+                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>{t("auth.module2Tag", "Module 02 / Post-Rejection")}</p>
+                <h3 className="text-h3" style={{ marginBottom: "0.5rem" }}>{t("auth.module2Title", "Rejection Decoder")}</h3>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                  Rigorous tripartite separation enforced by schema: strictly separates objective <strong style={{ color: "var(--text-primary)" }}>FACT</strong> from <strong style={{ color: "var(--text-primary)" }}>AI INTERPRETATION</strong> and actionable <strong style={{ color: "var(--text-primary)" }}>RECOMMENDATION</strong>.
+                  {t("auth.module2Desc", "Tripartite Fact-Interpretation-Recommendation extraction grounded in IRDAI Master Circular 2024. Cross-references 60-month moratorium protections.")}
                 </p>
                 <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <span className="mistral-badge">Strict Schema Separation</span>
-                  <span className="mistral-badge">Retrieval Confidence</span>
+                  <span className="mistral-badge">{t("auth.module2Badge1", "Tripartite Schema")}</span>
+                  <span className="mistral-badge">{t("auth.module2Badge2", "Moratorium Rules")}</span>
                 </div>
               </div>
 
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>Module 03 / Escalation</p>
-                <h3 className="text-h3" style={{ marginBottom: "0.5rem" }}>Appeal Draft Builder</h3>
+                <p className="text-eyebrow" style={{ marginBottom: "0.5rem" }}>{t("auth.module3Tag", "Module 03 / Escalation")}</p>
+                <h3 className="text-h3" style={{ marginBottom: "0.5rem" }}>{t("auth.module3Title", "Appeal Draft Builder")}</h3>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                  Constructs structured First-Level Grievance letters grounded in the IRDAI 2024 Master Circular 60-month moratorium rule. Server-side gatekeeper ensures explicit user sign-off prior to PDF export.
+                  {t("auth.module3Desc", "Generates clause-by-clause legally grounded rebuttal letters for insurer Grievance Redressal Officers (GRO) and Insurance Ombudsman with citation-backed evidence.")}
                 </p>
                 <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <span className="mistral-badge">IRDAI 2024 Chapter V</span>
-                  <span className="mistral-badge">Gatekeeper Review</span>
+                  <span className="mistral-badge">{t("auth.module3Badge1", "Clause-by-Clause Rebuttal")}</span>
+                  <span className="mistral-badge">{t("auth.module3Badge2", "Ombudsman Ready")}</span>
                 </div>
               </div>
             </div>
@@ -143,7 +145,7 @@ export default function LoginPage() {
                     transition: "all 0.15s ease",
                   }}
                 >
-                  Sign in
+                  {t("auth.signInBtn", "Sign In")}
                 </button>
                 <button
                   type="button"
@@ -159,7 +161,7 @@ export default function LoginPage() {
                     transition: "all 0.15s ease",
                   }}
                 >
-                  Create account
+                  {t("auth.createAccountBtn", "Create Account")}
                 </button>
               </div>
 
@@ -168,10 +170,10 @@ export default function LoginPage() {
                 <div>
                   <div style={{ marginBottom: "1.75rem" }}>
                     <p className="text-eyebrow" style={{ marginBottom: "0.25rem" }}>
-                      {mode === "login" ? "Welcome back" : "Get started"}
+                      {mode === "login" ? t("auth.accessTitle", "Access your claims") : t("auth.newAccountTitle", "Create your account")}
                     </p>
                     <h2 className="text-h2">
-                      {mode === "login" ? "Access your claim workspace" : "Register a new account"}
+                      {mode === "login" ? t("auth.accessSubtitle", "Sign in to track, audit, and appeal your claims") : t("auth.newAccountSubtitle", "Get started with AI-powered claim intelligence")}
                     </h2>
                   </div>
 
@@ -179,13 +181,13 @@ export default function LoginPage() {
                     {mode === "register" && (
                       <div>
                         <label className="text-eyebrow" htmlFor="fullName" style={{ display: "block", marginBottom: "0.4rem" }}>
-                          Full Name
+                          {t("auth.nameLabel", "Full Name")}
                         </label>
                         <input
                           id="fullName"
                           className="mistral-input"
                           type="text"
-                          placeholder="e.g. Ananya Roy / Rajesh Verma"
+                          placeholder={t("auth.namePlaceholder", "Siddhartha Jaiswal")}
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           autoComplete="name"
@@ -195,13 +197,13 @@ export default function LoginPage() {
 
                     <div>
                       <label className="text-eyebrow" htmlFor="email" style={{ display: "block", marginBottom: "0.4rem" }}>
-                        Email Address
+                        {t("auth.emailLabel", "Email Address")}
                       </label>
                       <input
                         id="email"
                         className="mistral-input"
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder={t("auth.emailPlaceholder", "you@example.com")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -211,13 +213,13 @@ export default function LoginPage() {
 
                     <div>
                       <label className="text-eyebrow" htmlFor="password" style={{ display: "block", marginBottom: "0.4rem" }}>
-                        Password
+                        {t("auth.passwordLabel", "Password")}
                       </label>
                       <input
                         id="password"
                         className="mistral-input"
                         type="password"
-                        placeholder="••••••••"
+                        placeholder={t("auth.passwordPlaceholder", "Enter your password")}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -241,7 +243,7 @@ export default function LoginPage() {
                         }}
                       >
                         <span style={{ fontSize: "1rem" }}>⏳</span>
-                        <span>Waking up the server… this can take up to a minute on cold start.</span>
+                        <span>{t("auth.coldStartNotice", "Backend server is waking up from idle. Please allow a few seconds on first request...")}</span>
                       </div>
                     )}
 
@@ -276,7 +278,7 @@ export default function LoginPage() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          Retry
+                          {t("common.retry", "Retry")}
                         </button>
                       </div>
                     )}
@@ -297,7 +299,13 @@ export default function LoginPage() {
                         <PixelArrowRight size={18} />
                       </span>
                       <span className="cta-label">
-                        {loading ? "Authenticating..." : mode === "login" ? "Sign in to ClaimSaathi" : "Create Account"}
+                        {loading
+                          ? mode === "login"
+                            ? t("auth.signingIn", "Signing in...")
+                            : t("auth.creatingAccount", "Creating account...")
+                          : mode === "login"
+                          ? t("auth.signInBtn", "Sign In")
+                          : t("auth.createAccountBtn", "Create Account")}
                       </span>
                       <span className="cta-arrow-right">
                         <PixelArrowRight size={18} />
@@ -309,7 +317,7 @@ export default function LoginPage() {
                 {/* Regulatory Footnote */}
                 <div style={{ marginTop: "2rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border-primary)" }}>
                   <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", lineHeight: 1.5 }}>
-                    <strong>Statutory Disclaimer:</strong> ClaimSaathi is a customer-side AI guidance platform. It does not act as an insurer, broker, third-party administrator (TPA), or legal counsel. Claim approvals remain solely with licensed insurers under IRDAI regulations.
+                    <strong>{t("rejection.disclaimer", "Statutory Disclaimer: ClaimSaathi is a customer-side AI guidance platform. It does not act as an insurer, broker, third-party administrator (TPA), or legal counsel. Claim approvals remain solely with licensed insurers under IRDAI regulations.")}</strong>
                   </p>
                 </div>
               </div>
@@ -319,10 +327,10 @@ export default function LoginPage() {
           {/* Bottom Banner */}
           <div className="border-t-grid" style={{ padding: "1.25rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span className="text-eyebrow">Made with ❤️ by Team Static</span>
+              <span className="text-eyebrow">ClaimSaathi · Paytm AI Hackathon Track 2</span>
             </div>
             <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
-              September 19, 2026
+              {t("brand.irdaiAligned", "IRDAI Master Circular 2024 Grounded")}
             </span>
           </div>
         </div>

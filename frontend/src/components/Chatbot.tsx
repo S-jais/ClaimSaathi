@@ -10,6 +10,8 @@ import {
 } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { DocumentUploadModal } from "@/components/DocumentUploadModal";
+import VoiceOverlay from "@/components/VoiceOverlay";
+import { type VoiceLanguage, getOrCreateAudioContext } from "@/lib/voice";
 
 interface ChatbotProps {
   claimId?: string;
@@ -47,22 +49,57 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [session, setSession] = useState<CopilotSessionData | null>(null);
   const [uiStage, setUiStage] = useState<"Understand" | "Prepare" | "Resolve">("Understand");
+  const getGreeting = useCallback((language: string) => {
+    if (language === "hi") {
+      return "नमस्ते! मैं आपका **क्लेम साथी कोपायलट** हूँ। मैं आपकी संपूर्ण क्लेम यात्रा (समझें → तैयार करें → समाधान) में मदद करूँगा।";
+    }
+    if (language === "hinglish") {
+      return "Namaste! Main aapka **ClaimSaathi Copilot** hoon. Main aapki poori claim journey (Samjhein → Taiyaar karein → Hal karein) mein guide karunga.";
+    }
+    return "Hello! I am your **ClaimSaathi Copilot**. I will guide you through your entire health claim journey — **Understand → Prepare → Resolve**.";
+  }, []);
+
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       id: "init_1",
       role: "assistant",
-      content:
-        lang === "hi"
-          ? "नमस्ते! मैं **ClaimSaathi Copilot** हूँ। मैं आपकी बीमा दावा यात्रा (समझें → तैयार करें → समाधान) में मार्गदर्शन करूँगा।"
-          : "Hello! I am your **ClaimSaathi Copilot**. I will guide you through your entire health claim journey — **Understand → Prepare → Resolve**.",
+      content: getGreeting(lang),
       timestamp: new Date().toISOString(),
     },
   ]);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id.startsWith("init_")) {
+        return [
+          {
+            ...prev[0],
+            content: getGreeting(lang),
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [lang, getGreeting]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeCitation, setActiveCitation] = useState<CopilotCitation | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [approvingDraftId, setApprovingDraftId] = useState<string | null>(null);
+  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
+
+  const handleOpenVoiceMode = () => {
+    try {
+      const ctx = getOrCreateAudioContext();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.getVoices();
+      }
+    } catch {}
+    setVoiceOverlayOpen(true);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -383,6 +420,62 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
     }
   }
 
+  async function handleSendVoiceTurn(
+    voiceText: string,
+    voiceLang: VoiceLanguage,
+    confidence?: number
+  ): Promise<{ reply: string; spoken_text?: string; language?: string; read_back_required?: boolean }> {
+    const userMsg: DisplayMessage = {
+      id: `usr_v_${Date.now()}`,
+      role: "user",
+      content: voiceText,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+
+    let payload: CopilotPayload | null = null;
+    const effectiveLang = voiceLang === "auto" ? lang : voiceLang;
+
+    try {
+      let activeSession = session;
+      if (!activeSession) {
+        activeSession = await copilot.createSession(claimId);
+        setSession(activeSession);
+      }
+      payload = await copilot.sendMessage(activeSession.id, voiceText, effectiveLang, {
+        mode: "voice",
+        input_source: "voice",
+        transcript_confidence: confidence,
+      });
+    } catch {
+      payload = buildContextualFallbackPayload(voiceText, effectiveLang, claimId, uiStage);
+    }
+
+    if (payload) {
+      if (payload.ui_stage) setUiStage(payload.ui_stage);
+      const asstMsg: DisplayMessage = {
+        id: `asst_v_${Date.now()}`,
+        role: "assistant",
+        content: payload.reply,
+        payload: payload,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, asstMsg]);
+
+      return {
+        reply: payload.reply,
+        spoken_text: payload.spoken_text || payload.reply,
+        language: payload.language,
+        read_back_required: (payload as any).read_back_required,
+      };
+    }
+
+    return {
+      reply: "I have reviewed your case details.",
+      spoken_text: "I have reviewed your case details.",
+    };
+  }
+
   async function handleApproveDraft(draftId: string) {
     setApprovingDraftId(draftId);
     try {
@@ -439,9 +532,31 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
     }
   }
 
+  const defaultSuggested =
+    lang === "hi"
+      ? [
+          "मेरी पॉलिसी के तहत क्या कवर है?",
+          "दावे की तैयारी जांचें",
+          "मेरा क्लेम क्यों काटा गया?",
+          "औपचारिक अपील पत्र तैयार करें",
+        ]
+      : lang === "hinglish"
+      ? [
+          "Meri policy ke under kya cover hai?",
+          "Claim readiness check karein",
+          "Mera claim kyun deduct hua?",
+          "Formal appeal letter draft karein",
+        ]
+      : [
+          "What is covered under my policy?",
+          "Check claim readiness",
+          "Why was my claim deducted?",
+          "Draft formal appeal letter",
+        ];
+
   // Extract latest quick replies
   const latestAsstMsg = [...messages].reverse().find((m) => m.role === "assistant");
-  const quickReplies = latestAsstMsg?.payload?.quick_replies || DEFAULT_SUGGESTED;
+  const quickReplies = latestAsstMsg?.payload?.quick_replies || defaultSuggested;
 
   return (
     <>
@@ -493,12 +608,31 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
                       boxShadow: "0 0 6px rgba(16, 185, 129, 0.6)",
                     }}
                   />
-                  <span>Grounded · Case: {claimId}</span>
+                  <span>{t("chat.groundedCase", "Grounded · Case: {claimId}").replace("{claimId}", claimId)}</span>
                 </div>
               </div>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <button
+                onClick={handleOpenVoiceMode}
+                title={t("voice.openVoice", "Voice Mode")}
+                className="btn-mistral-ghost"
+                style={{
+                  padding: "0.22rem 0.5rem",
+                  fontSize: "0.76rem",
+                  color: "var(--mistral-amber, #f97316)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
+                  border: "1px solid rgba(249, 115, 22, 0.35)",
+                  borderRadius: "6px",
+                  background: "rgba(249, 115, 22, 0.08)",
+                  cursor: "pointer",
+                }}
+              >
+                🎙️ {t("voice.openVoice", "Voice")}
+              </button>
               <button
                 onClick={handlePurgeMemory}
                 title="Purge Memory (Privacy / DPDP)"
@@ -522,17 +656,17 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
           <div className="copilot-stage-bar" id="copilot-stage-bar">
             <div className={`copilot-stage-step ${uiStage === "Understand" ? "active" : ""}`}>
               <span className="copilot-stage-dot" />
-              <span>1. Understand</span>
+              <span>{t("chat.stageUnderstand", "1. UNDERSTAND")}</span>
             </div>
             <span className="copilot-stage-arrow">→</span>
             <div className={`copilot-stage-step ${uiStage === "Prepare" ? "active" : ""}`}>
               <span className="copilot-stage-dot" />
-              <span>2. Prepare</span>
+              <span>{t("chat.stagePrepare", "2. PREPARE")}</span>
             </div>
             <span className="copilot-stage-arrow">→</span>
             <div className={`copilot-stage-step ${uiStage === "Resolve" ? "active" : ""}`}>
               <span className="copilot-stage-dot" />
-              <span>3. Resolve</span>
+              <span>{t("chat.stageResolve", "3. RESOLVE")}</span>
             </div>
           </div>
 
@@ -749,6 +883,23 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
               📎
             </button>
 
+            {/* Voice mode mic button */}
+            <button
+              onClick={handleOpenVoiceMode}
+              className="btn-mistral-ghost"
+              title={t("voice.openVoice", "Voice Mode")}
+              style={{
+                padding: "0.45rem 0.6rem",
+                fontSize: "1.05rem",
+                borderRadius: "6px",
+                flexShrink: 0,
+                color: "var(--mistral-amber, #f97316)",
+              }}
+              aria-label="Start Voice Mode"
+            >
+              🎙️
+            </button>
+
             <textarea
               ref={inputRef}
               value={input}
@@ -780,7 +931,7 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
 
           {/* Persistent Guardrail Disclaimer */}
           <div className="chat-disclaimer">
-            AI guidance based on your documents — not an insurer decision.
+            {t("chat.disclaimer", "AI guidance based on your documents — not an insurer decision.")}
           </div>
         </div>
       )}
@@ -870,6 +1021,17 @@ export default function Chatbot({ claimId = "CLM-20491" }: ChatbotProps) {
         onSuccess={() => {
           setUploadModalOpen(false);
           handleSendMessage("I have uploaded a new document. Please update the claim assessment.");
+        }}
+      />
+
+      {/* Voice Mode Overlay */}
+      <VoiceOverlay
+        isOpen={voiceOverlayOpen}
+        onClose={() => setVoiceOverlayOpen(false)}
+        onSendVoiceMessage={handleSendVoiceTurn}
+        onFallbackToText={() => {
+          setVoiceOverlayOpen(false);
+          setTimeout(() => inputRef.current?.focus(), 100);
         }}
       />
     </>

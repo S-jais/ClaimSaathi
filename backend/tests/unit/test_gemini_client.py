@@ -27,7 +27,7 @@ async def test_gemini_client_dual_tier_resolution():
 
 @pytest.mark.asyncio
 async def test_gemini_client_mock_generate_deterministic():
-    client = GeminiClient(api_key=None)
+    client = GeminiClient(api_key="")
     
     # Prompt about readiness
     res_readiness = await client.generate("What is my claim readiness score?", model_tier="flash")
@@ -42,7 +42,7 @@ async def test_gemini_client_mock_generate_deterministic():
 
 @pytest.mark.asyncio
 async def test_gemini_client_structured_parse():
-    client = GeminiClient(api_key=None)
+    client = GeminiClient(api_key="")
     parsed = await client.generate_structured(
         prompt="Assess claim",
         response_schema=SampleResponseSchema,
@@ -54,7 +54,7 @@ async def test_gemini_client_structured_parse():
 
 @pytest.mark.asyncio
 async def test_gemini_client_streaming_chunks():
-    client = GeminiClient(api_key=None)
+    client = GeminiClient(api_key="")
     chunks = []
     async for chunk in client.stream("Check my readiness score"):
         chunks.append(chunk)

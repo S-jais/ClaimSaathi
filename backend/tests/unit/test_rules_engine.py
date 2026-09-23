@@ -55,8 +55,8 @@ class TestReimbursementRequirements:
             claim_type="reimbursement",
             claim_amount=Decimal("50000"),
             sum_insured=Decimal("500000"),
-            patient_name="Ramesh Kumar",
-            policyholder_name="Ramesh Kumar",
+            patient_name="Siddhartha Jaiswal",
+            policyholder_name="Siddhartha Jaiswal",
             admission_date=date(2026, 1, 10),
             discharge_date=date(2026, 1, 13),
             uploaded_documents=docs,
@@ -136,7 +136,7 @@ class TestConsistencyFlags:
             claim_id="claim-7", claim_type="reimbursement",
             claim_amount=None, sum_insured=None,
             patient_name="Suresh Patel",
-            policyholder_name="Ramesh Kumar",
+            policyholder_name="Siddhartha Jaiswal",
             admission_date=None, discharge_date=None,
             uploaded_documents=docs,
         )
@@ -147,8 +147,8 @@ class TestConsistencyFlags:
         result = engine.evaluate(
             claim_id="claim-8", claim_type="reimbursement",
             claim_amount=None, sum_insured=None,
-            patient_name="Ramesh Kumar",
-            policyholder_name="Ramesh Kumar",
+            patient_name="Siddhartha Jaiswal",
+            policyholder_name="Siddhartha Jaiswal",
             admission_date=None, discharge_date=None,
             uploaded_documents=docs,
         )
@@ -184,7 +184,7 @@ class TestDemoScenario:
 
     def test_demo_claim_missing_consultation_notes(self, engine):
         """
-        Demo: Ramesh Kumar, CLM-20491
+        Demo: Siddhartha Jaiswal, CLM-20491
         Missing: consultation_notes (deliberately absent)
         Present: policy, hospital_bill, discharge_summary, prescription
         """
@@ -201,8 +201,8 @@ class TestDemoScenario:
             claim_type="reimbursement",
             claim_amount=Decimal("184500"),
             sum_insured=Decimal("500000"),
-            patient_name="Ramesh Kumar",
-            policyholder_name="Ramesh Kumar",
+            patient_name="Siddhartha Jaiswal",
+            policyholder_name="Siddhartha Jaiswal",
             admission_date=date(2026, 1, 10),
             discharge_date=date(2026, 1, 14),
             uploaded_documents=docs,

@@ -16,74 +16,10 @@ export default function RejectionDecoderPage() {
   const params = useParams();
   const claimId = (params?.id as string) || "CLM-20491";
 
-  const { lang, setLang } = useLanguage();
+  const { lang, t } = useLanguage();
   const [result, setResult] = useState<RejectionResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const t =
-    lang === "hi"
-      ? {
-        title: "अस्वीकृति डिकोडर",
-        subtitle: "IRDAI 2024 मास्टर परिपत्र पर आधारित त्रिपक्षीय विश्लेषण",
-        backToDashboard: "डैशबोर्ड पर वापस जाएं",
-        backToReadiness: "तैयारी जाँच पर वापस जाएं",
-        claim: "क्लेम",
-        repudiationNotice: "अस्वीकृति नोटिस",
-        statutoryAlignment: "सांविधिक सामंजस्य",
-        contestedClause: "विवादित पॉलिसी क्लॉज",
-        contestedClauseDesc: "बीमाकर्ता ने जॉइंट रिप्लेसमेंट सर्जरी पर 24 महीने की प्रतीक्षा अवधि लागू की।",
-        governingRule: "लागू विनियामक नियम",
-        governingRuleTitle: "60-माह मोरेटोरियम अवरोध",
-        governingRuleDesc: "पॉलिसीधारक ने 78 निरंतर महीने पूरे किए हैं। कानूनी रूप से यह अपवर्जन अमान्य एवं शून्य है।",
-        factTag: "01. तथ्य (वस्तुनिष्ठ साक्ष्य)",
-        factBadge: "पॉलिसीधारक क्लेम सूचना",
-        interpTag: "02. AI विनियामक व्याख्या",
-        interpBadge: "IRDAI मोरेटोरियम संरक्षण",
-        recoTag: "03. व्यावहारिक अनुशंसा",
-        recoBadge: "सांविधिक उपचार प्रक्रिया",
-        confidence: "पुनर्प्राप्ति विश्वसनीयता",
-        confidenceNote: "वैधानिक नियमों के विरुद्ध पॉलिसी क्लॉज मिलान दर्शाता है। यह अनुमोदन की गारंटी नहीं है।",
-        buildAppeal: "अपील का मसौदा तैयार करें",
-        readinessChecklist: "तैयारी चेकलिस्ट",
-        disclaimer:
-          "सांविधिक अस्वीकरण: यह विश्लेषण केवल IRDAI 2024 मास्टर परिपत्र के प्रावधानों पर आधारित है। अंतिम दावा निपटान निर्णय पूरी तरह बीमाकर्ता के अधिकार क्षेत्र में रहेगा।",
-        factDefault:
-          "बीमाकर्ता का दावा अस्वीकृति पत्र दिनांक 14 फरवरी 2026, जिसमें क्लॉज 4.2 (जोड़ों के प्रतिस्थापन के लिए 24 महीने की प्रतीक्षा अवधि) का हवाला देकर ₹1,84,500 की प्रतिपूर्ति खारिज की गई है। हालांकि, पॉलिसी रिकॉर्ड दर्शाते हैं कि पॉलिसी 12 मार्च 2018 को जारी की गई थी और दावा प्रस्तुति के समय 78 निरंतर महीने पूरे हो चुके थे।",
-        interpDefault:
-          "IRDAI मास्टर सर्कुलर 2024 (अध्याय V, धारा 5.3) के तहत 60 महीने का सांविधिक मोरेटोरियम लागू होता है। इसके अनुसार, 5 वर्ष (60 महीने) की निरंतर कवरेज पूर्ण होने के पश्चात, सिद्ध धोखाधड़ी (Fraud) के अलावा किसी भी आधार (जैसे प्रतीक्षा अवधि या पूर्व-विद्यमान बीमारी) पर क्लेम खारिज नहीं किया जा सकता। अतः बीमाकर्ता का 24-महीने की प्रतीक्षा अवधि का हवाला देना कानूनी रूप से अमान्य और शून्य है।",
-        recoDefault:
-          "बीमाकर्ता के शिकायत निवारण अधिकारी (GRO) को IRDAI मोरेटोरियम क्लॉज के संदर्भ के साथ औपचारिक शिकायत दर्ज करें। यदि 15 दिनों में समाधान नहीं होता है, तो बीमा लोकपाल (Insurance Ombudsman) के समक्ष अपील दायर करें। नीचे दिए गए बटन से कानूनी रूप से संरचित अपील पत्र तैयार करें।",
-      }
-      : {
-        title: "Rejection Decoder",
-        subtitle: "Tripartite schema analysis grounded in IRDAI 2024 Master Circular",
-        backToDashboard: "Back to Dashboard",
-        backToReadiness: "Back to Readiness Check",
-        claim: "Claim",
-        repudiationNotice: "Repudiation Notice",
-        statutoryAlignment: "Statutory Alignment",
-        contestedClause: "Contested Policy Clause",
-        contestedClauseDesc: "Insurer invoked 24-month waiting period on Joint Replacement Surgery.",
-        governingRule: "Governing Circular Rule",
-        governingRuleTitle: "60-Month Moratorium Barrier",
-        governingRuleDesc: "Policyholder completed 78 continuous months. Exclusion invalid as a matter of law.",
-        factTag: "01. FACT (OBJECTIVE EVIDENCE)",
-        factBadge: "Policyholder Claim Notice",
-        interpTag: "02. AI REGULATORY INTERPRETATION",
-        interpBadge: "IRDAI Moratorium Protection",
-        recoTag: "03. ACTIONABLE RECOMMENDATION",
-        recoBadge: "Statutory Remedy Protocol",
-        confidence: "Retrieval Confidence",
-        confidenceNote: "Measures policy clause match. NOT an approval probability.",
-        buildAppeal: "Build Appeal Draft",
-        readinessChecklist: "Readiness Checklist",
-        disclaimer:
-          "Statutory Disclaimer: Analysis grounds strictly on IRDAI 2024 Master Circular provisions. Final claim settlement authority remains with the insurer.",
-        factDefault: "",
-        interpDefault: "",
-        recoDefault: "",
-      };
 
   useEffect(() => {
     claims
@@ -105,9 +41,27 @@ export default function RejectionDecoderPage() {
     );
   }
 
-  const factText = (lang === "hi" && t.factDefault) ? t.factDefault : (result?.fact_text || "");
-  const interpText = (lang === "hi" && t.interpDefault) ? t.interpDefault : (result?.ai_interpretation_text || "");
-  const recoText = (lang === "hi" && t.recoDefault) ? t.recoDefault : (result?.recommendation_text || "");
+  // Multilingual fallback texts for the 3-part schema
+  const factText =
+    lang === "hi"
+      ? "बीमाकर्ता का दावा अस्वीकृति पत्र दिनांक 14 फरवरी 2026, जिसमें क्लॉज 4.2 (जोड़ों के प्रतिस्थापन के लिए 24 महीने की प्रतीक्षा अवधि) का हवाला देकर ₹1,84,500 की प्रतिपूर्ति खारिज की गई है। हालांकि, पॉलिसी रिकॉर्ड दर्शाते हैं कि पॉलिसी 12 मार्च 2018 को जारी की गई थी और दावा प्रस्तुति के समय 78 निरंतर महीने पूरे हो चुके थे।"
+      : lang === "hinglish"
+      ? "Insurer ka claim rejection letter dated 14 Feb 2026, jisme Clause 4.2 (Joint replacement ke liye 24-month waiting period) cite karke ₹1,84,500 ka reimbursement reject kiya gaya hai. Lekin policy records show karte hain ki policy 12 March 2018 ko issue hui thi aur claim ke waqt 78 continuous months poore ho chuke the."
+      : result?.fact_text || "Insurer repudiation letter dated 14 February 2026 citing Clause 4.2 (24-month waiting period for Joint Replacement Surgery) to disallow reimbursement of ₹1,84,500. However, policy schedules verify original inception on 12 March 2018 with 78 continuous months completed at claim inception.";
+
+  const interpText =
+    lang === "hi"
+      ? "IRDAI मास्टर सर्कुलर 2024 (अध्याय V, धारा 5.3) के तहत 60 महीने का सांविधिक मोरेटोरियम लागू होता है। इसके अनुसार, 5 वर्ष (60 महीने) की निरंतर कवरेज पूर्ण होने के पश्चात, सिद्ध धोखाधड़ी (Fraud) के अलावा किसी भी आधार (जैसे प्रतीक्षा अवधि या पूर्व-विद्यमान बीमारी) पर क्लेम खारिज नहीं किया जा सकता। अतः बीमाकर्ता का 24-महीने की प्रतीक्षा अवधि का हवाला देना कानूनी रूप से अमान्य और शून्य है।"
+      : lang === "hinglish"
+      ? "IRDAI Master Circular 2024 (Chapter V, Section 5.3) ke under 60-month statutory moratorium apply hota hai. Iske mutabik, 5 saal (60 months) continuous coverage complete hone ke baad fraud ke alawa kisi bhi ground (jaise waiting period ya pre-existing disease) par claim reject nahi kiya ja sakta. Isliye insurer ka Clause 4.2 cite karna legally invalid aur void hai."
+      : result?.ai_interpretation_text || "Under IRDAI Master Circular 2024 (Chapter V, Section 5.3), a 60-month statutory moratorium applies. After 5 years of continuous coverage, no health claim may be contested on non-disclosure or waiting period grounds except proven fraud. The insurer's invocation of Clause 4.2 is legally void and unenforceable.";
+
+  const recoText =
+    lang === "hi"
+      ? "बीमाकर्ता के शिकायत निवारण अधिकारी (GRO) को IRDAI मोरेटोरियम क्लॉज के संदर्भ के साथ औपचारिक शिकायत दर्ज करें। यदि 15 दिनों में समाधान नहीं होता है, तो बीमा लोकपाल (Insurance Ombudsman) के समक्ष अपील दायर करें। नीचे दिए गए बटन से कानूनी रूप से संरचित अपील पत्र तैयार करें।"
+      : lang === "hinglish"
+      ? "Insurer ke Grievance Redressal Officer (GRO) ko IRDAI moratorium clause quote karte hue formal representation file karein. Agar 15 din mein redressal na mile, toh Insurance Ombudsman ke paas appeal karein. Niche diye gaye button se legal appeal letter export karein."
+      : result?.recommendation_text || "Submit a formal representation to the insurer's Grievance Redressal Officer (GRO) citing Section 5.3 statutory moratorium protections. If unresolved within 15 days, escalate to the Insurance Ombudsman. Click below to generate your clause-by-clause grievance appeal draft.";
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -126,50 +80,15 @@ export default function RejectionDecoderPage() {
                     href={`/claims/${claimId}/readiness`}
                     style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 600 }}
                   >
-                    <PixelArrowLeft size={14} /> {t.backToReadiness}
+                    <PixelArrowLeft size={14} /> {t("readiness.backToDashboard", "Back to Readiness Check")}
                   </Link>
                   <span style={{ color: "var(--border-secondary)" }}>/</span>
-                  <span className="text-eyebrow">{t.claim} {claimId}</span>
-                  <span className="mistral-badge badge-danger">{t.repudiationNotice}</span>
+                  <span className="text-eyebrow">{t("rejection.claim", "Claim")} {claimId}</span>
+                  <span className="mistral-badge badge-danger">{t("claimHub.repudiatedBadge", "Repudiated by TPA")}</span>
                 </div>
 
-                <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>{t.title}</h1>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>{t.subtitle}</p>
-              </div>
-
-              {/* Language Switcher synchronized with LanguageContext */}
-              <div style={{ display: "flex", border: "1px solid var(--border-primary)", borderRadius: "3px", overflow: "hidden" }}>
-                <button
-                  onClick={() => setLang("en")}
-                  style={{
-                    padding: "0.35rem 0.75rem",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    backgroundColor: lang === "en" ? "var(--surface-brand-secondary)" : "transparent",
-                    color: lang === "en" ? "var(--text-primary)" : "var(--text-tertiary)",
-                    cursor: "pointer",
-                    border: "none",
-                  }}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => setLang("hi")}
-                  style={{
-                    padding: "0.35rem 0.75rem",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    borderLeft: "1px solid var(--border-primary)",
-                    borderTop: "none",
-                    borderRight: "none",
-                    borderBottom: "none",
-                    backgroundColor: lang === "hi" ? "var(--surface-brand-secondary)" : "transparent",
-                    color: lang === "hi" ? "var(--text-primary)" : "var(--text-tertiary)",
-                    cursor: "pointer",
-                  }}
-                >
-                  हिन्दी
-                </button>
+                <h1 className="text-h1" style={{ marginBottom: "0.5rem" }}>{t("rejection.title", "Rejection Decoder")}</h1>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>{t("rejection.subtitle", "Tripartite schema analysis grounded in IRDAI 2024 Master Circular")}</p>
               </div>
             </div>
           </section>
@@ -178,38 +97,46 @@ export default function RejectionDecoderPage() {
           {result && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", borderBottom: "1px solid var(--border-primary)" }} className="divide-grid-x">
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t.confidence}</p>
+                <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("rejection.confidence", "Retrieval Confidence")}</p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
                   <span className="font-mistral" style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--mistral-emerald)" }}>
                     {Math.round(result.confidence * 100)}%
                   </span>
-                  <span className="mistral-badge badge-ready">{t.statutoryAlignment}</span>
+                  <span className="mistral-badge badge-ready">{t("claimHub.shieldBadge", "Statutory Alignment")}</span>
                 </div>
                 <div className="mistral-progress-track" style={{ marginTop: "0.75rem" }}>
                   <div className="mistral-progress-fill" style={{ width: `${result.confidence * 100}%` }} />
                 </div>
                 <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "0.4rem" }}>
-                  ⚠ {t.confidenceNote}
+                  ⚠ {t("rejection.confidenceNote", "Measures policy clause match against statutory rules. NOT an approval probability.")}
                 </p>
               </div>
 
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t.contestedClause}</p>
+                <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("rejection.clauseInvoked", "Clause Invoked by Insurer")}</p>
                 <span className="font-mistral" style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--text-primary)", display: "block" }}>
-                  {result.clause_ref}
+                  {result.clause_ref || "Clause 4.2"}
                 </span>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                  {t.contestedClauseDesc}
+                  {lang === "hi"
+                    ? "बीमाकर्ता ने जॉइंट रिप्लेसमेंट सर्जरी पर 24 महीने की प्रतीक्षा अवधि लागू की।"
+                    : lang === "hinglish"
+                    ? "Insurer ne joint replacement surgery par 24-month waiting period invoke kiya."
+                    : "Insurer invoked 24-month waiting period on Joint Replacement Surgery."}
                 </p>
               </div>
 
               <div className="mistral-cell">
-                <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t.governingRule}</p>
+                <p className="text-eyebrow" style={{ marginBottom: "0.4rem" }}>{t("rejection.statutoryRule", "Statutory Grounding Rule")}</p>
                 <span className="font-mistral" style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--mistral-flame)", display: "block" }}>
-                  {t.governingRuleTitle}
+                  {lang === "hi" ? "60-माह मोरेटोरियम अवरोध" : lang === "hinglish" ? "60-Month Moratorium Barrier" : "60-Month Moratorium Barrier"}
                 </span>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                  {t.governingRuleDesc}
+                  {lang === "hi"
+                    ? "पॉलिसीधारक ने 78 निरंतर महीने पूरे किए हैं। कानूनी रूप से यह अपवर्जन अमान्य एवं शून्य है।"
+                    : lang === "hinglish"
+                    ? "Policyholder ne 78 continuous months complete kiye hain. Exclusion legally void hai."
+                    : "Policyholder completed 78 continuous months. Exclusion invalid as a matter of law."}
                 </p>
               </div>
             </div>
@@ -228,9 +155,9 @@ export default function RejectionDecoderPage() {
               <div className="mistral-cell" style={{ backgroundColor: "var(--surface-brand-primary)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="text-eyebrow" style={{ color: "var(--text-tertiary)" }}>
-                    {t.factTag}
+                    {t("rejection.factTag", "01. FACT (OBJECTIVE EVIDENCE)")}
                   </span>
-                  <span className="mistral-badge">{t.factBadge}</span>
+                  <span className="mistral-badge">{t("dashboard.activeAccount", "Policyholder Notice")}</span>
                 </div>
                 <p style={{ color: "var(--text-primary)", fontSize: "0.975rem", lineHeight: 1.7, fontWeight: 500 }}>
                   {factText}
@@ -241,9 +168,9 @@ export default function RejectionDecoderPage() {
               <div className="mistral-cell" style={{ backgroundColor: "var(--surface-brand-secondary)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>
-                    {t.interpTag}
+                    {t("rejection.interpTag", "02. AI REGULATORY INTERPRETATION")}
                   </span>
-                  <span className="mistral-badge badge-flame">{t.interpBadge}</span>
+                  <span className="mistral-badge badge-flame">{t("dashboard.moratoriumActive", "IRDAI Protection")}</span>
                 </div>
                 <div style={{ color: "var(--text-primary)", fontSize: "0.95rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                   {interpText}
@@ -254,9 +181,9 @@ export default function RejectionDecoderPage() {
               <div className="mistral-cell" style={{ backgroundColor: "var(--surface-brand-primary)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
                   <span className="text-eyebrow" style={{ color: "var(--mistral-emerald)" }}>
-                    {t.recoTag}
+                    {t("rejection.recoTag", "03. ACTIONABLE RECOMMENDATION")}
                   </span>
-                  <span className="mistral-badge badge-ready">{t.recoBadge}</span>
+                  <span className="mistral-badge badge-ready">{t("readiness.nextRemediation", "Next Step")}</span>
                 </div>
                 <div style={{ color: "var(--text-primary)", fontSize: "0.95rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                   {recoText}
@@ -268,13 +195,13 @@ export default function RejectionDecoderPage() {
           {/* Regulatory Disclaimer Banner */}
           <div className="border-t-grid mistral-banner-notice">
             <PixelAlert size={16} />
-            <p>{t.disclaimer}</p>
+            <p>{t("rejection.disclaimer", "Statutory Disclaimer: Analysis grounds strictly on IRDAI 2024 Master Circular provisions. Final claim settlement authority remains with the insurer.")}</p>
           </div>
 
           {/* Action Footer */}
           <div className="border-t-grid" style={{ padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             <Link href={`/claims/${claimId}/readiness`} className="btn-mistral-outline">
-              <PixelArrowLeft size={16} /> {t.readinessChecklist}
+              <PixelArrowLeft size={16} /> {t("readiness.checklistHeader", "Readiness Checklist")}
             </Link>
 
             <Link
@@ -285,7 +212,7 @@ export default function RejectionDecoderPage() {
               <span className="cta-arrow-left">
                 <PixelArrowRight size={18} />
               </span>
-              <span className="cta-label">{t.buildAppeal}</span>
+              <span className="cta-label">{t("rejection.buildAppeal", "Build Appeal Draft")}</span>
               <span className="cta-arrow-right">
                 <PixelArrowRight size={18} />
               </span>

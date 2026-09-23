@@ -63,6 +63,8 @@ class CopilotResponsePayload(BaseModel):
     reply: str
     language: Literal["en", "hi", "hinglish"] = "en"
     spoken_text: str = ""
+    read_back_required: bool = False
+    speak_priority: Literal["normal", "urgent"] = "normal"
     sections: StructuredSections = Field(default_factory=StructuredSections)
     citations: list[CitationItem] = Field(default_factory=list)
     draft_card: DraftCard | None = None
@@ -80,6 +82,9 @@ class SendMessageRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=4000)
     language: str = Field("en", description="Language code: en, hi, or hinglish")
     mode: Literal["text", "voice"] = "text"
+    input_source: Literal["text", "voice"] = "text"
+    transcript_confidence: float | None = None
+    language_hint: str | None = None
 
 
 class ApproveDraftRequest(BaseModel):

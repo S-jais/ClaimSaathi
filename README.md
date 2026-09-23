@@ -3,8 +3,8 @@
 > **AI-powered, customer-side insurance claim copilot.**
 > ClaimSaathi doesn't replace the insurer. It makes the customer better prepared to navigate the insurer.
 
-Built for **Paytm AI Hackathon — Track 2: AI-Powered Financial Journeys.**
-Team Static: Siddhartha Jaiswal · Suman Kumar Jha
+Built for **Paytm AI Hackathon ï¿½ Track 2: AI-Powered Financial Journeys.**
+Team Static: Siddhartha Jaiswal ï¿½ Suman Kumar Jha
 
 ---
 
@@ -34,7 +34,7 @@ ClaimSaathi reduces confusion at three moments in the health-insurance reimburse
 git clone <repo>
 cd claimsaathi
 cp .env.example .env
-# Edit .env — at minimum set OPENAI_API_KEY and a strong SECRET_KEY
+# Edit .env ï¿½ at minimum set OPENAI_API_KEY and a strong SECRET_KEY
 ```
 
 ### 2. Start all services
@@ -59,9 +59,9 @@ docker-compose -f infrastructure/docker-compose.yml exec backend python /app/scr
 - MinIO: http://localhost:9001
 
 ### Demo login
-Email: ramesh.kumar@demo.claimsaathi.in  Password: DemoPass@2026!
+Email: siddhartha.jaiswal@demo.claimsaathi.in  Password: DemoPass@2026!
 
-> Demo data only. Ramesh Kumar is fictional. No real personal information used anywhere.
+> Demo data only. Siddhartha Jaiswal is fictional. No real personal information used anywhere.
 
 ---
 

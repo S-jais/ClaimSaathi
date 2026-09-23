@@ -21,20 +21,20 @@ type SectionKey =
   | "supporting_evidence_list"
   | "requested_action";
 
-const SECTION_ORDER: { key: SectionKey; labelEn: string; labelHi: string; prefix: string }[] = [
-  { key: "claim_summary", labelEn: "Claim & Patient Summary", labelHi: "क्लेम एवं मरीज़ विवरण", prefix: "01" },
-  { key: "rejection_reason", labelEn: "Repudiation Cited by Insurer", labelHi: "बीमाकर्ता द्वारा उद्धृत अस्वीकृति आधार", prefix: "02" },
-  { key: "relevant_clause", labelEn: "Statutory Law & IRDAI Moratorium", labelHi: "सांविधिक कानून एवं IRDAI मोरेटोरियम", prefix: "03" },
-  { key: "factual_clarification", labelEn: "Factual Clarification & Challenge", labelHi: "तथ्यात्मक स्पष्टीकरण एवं आपत्ति", prefix: "04" },
-  { key: "supporting_evidence_list", labelEn: "Enclosed Evidentiary Documents", labelHi: "संलग्न साक्ष्य दस्तावेज़ सूची", prefix: "05" },
-  { key: "requested_action", labelEn: "Specific Relief Demanded & Timelines", labelHi: "मांगी गई विशिष्ट राहत एवं समय-सीमा", prefix: "06" },
+const SECTION_ORDER: { key: SectionKey; labelKey: string; prefix: string }[] = [
+  { key: "claim_summary", labelKey: "appeal.sec1", prefix: "01" },
+  { key: "rejection_reason", labelKey: "appeal.sec2", prefix: "02" },
+  { key: "relevant_clause", labelKey: "appeal.sec3", prefix: "03" },
+  { key: "factual_clarification", labelKey: "appeal.sec4", prefix: "04" },
+  { key: "supporting_evidence_list", labelKey: "appeal.sec5", prefix: "05" },
+  { key: "requested_action", labelKey: "appeal.sec6", prefix: "06" },
 ];
 
 export default function AppealBuilderPage() {
   const params = useParams();
   const claimId = (params?.id as string) || "CLM-20491";
 
-  const { lang } = useLanguage();
+  const { t: translate, lang } = useLanguage();
   const [draft, setDraft] = useState<AppealDraft | null>(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(false);
@@ -82,7 +82,7 @@ export default function AppealBuilderPage() {
       `Claim Reference: ${claimId}\n` +
       `Date: ${new Date().toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN")}\n` +
       `Statutory Authority: IRDAI Master Circular 2024 (Chapter V, Section 5.3)\n\n` +
-      SECTION_ORDER.map(s => `[${(lang === "hi" ? s.labelHi : s.labelEn).toUpperCase()}]\n${editedContent[s.key] || ""}\n\n`).join("")
+      SECTION_ORDER.map(s => `[${translate(s.labelKey, s.key).toUpperCase()}]\n${editedContent[s.key] || ""}\n\n`).join("")
     ], { type: "text/plain;charset=utf-8" });
     element.href = URL.createObjectURL(file);
     element.download = `Appeal_Brief_${claimId}.txt`;
@@ -106,39 +106,29 @@ export default function AppealBuilderPage() {
   }
 
   const t = {
-    backToRejection: lang === "hi" ? "अस्वीकृति डिकोडर पर वापस जाएं" : "Back to Rejection Decoder",
-    claim: lang === "hi" ? "क्लेम" : "Claim",
-    approvedBadge: lang === "hi" ? "प्रस्तुति हेतु स्वीकृत" : "APPROVED FOR SUBMISSION",
-    pendingBadge: lang === "hi" ? "समीक्षा लंबित" : "REVIEW PENDING",
-    title: lang === "hi" ? "अपील प्रारूप निर्माता" : "Appeal Draft Builder",
-    subtitle: lang === "hi"
-      ? "IRDAI मास्टर परिपत्र 2024 अध्याय V (60-माह मोरेटोरियम) पर आधारित औपचारिक प्रथम-स्तरीय शिकायत पत्र"
-      : "Formal First-Level Grievance brief grounded in IRDAI Master Circular 2024 Chapter V (60-Month Moratorium)",
-    editMode: lang === "hi" ? "संपादन मोड" : "Edit Mode",
-    previewDoc: lang === "hi" ? "दस्तावेज़ पूर्वावलोकन" : "Preview Document",
-    recordingApproval: lang === "hi" ? "स्वीकृति दर्ज की जा रही है..." : "Recording Approval...",
-    approveForExport: lang === "hi" ? "निर्यात हेतु स्वीकृत करें" : "Approve for Export",
-    downloadBtn: lang === "hi" ? "अपील प्रारूप डाउनलोड करें (.TXT/PDF)" : "Download Appeal Brief (.TXT/PDF)",
-    gatekeeperTitleApproved: lang === "hi" ? "✓ पॉलिसीधारक स्वीकृति सत्यापित एवं ऑडिट की गई।" : "✓ Policyholder Approval Verified & Audited.",
-    gatekeeperTitlePending: lang === "hi" ? "सत्यापन प्रोटोकॉल:" : "Gatekeeper Verification Protocol:",
-    gatekeeperBodyApproved: lang === "hi"
-      ? "स्वीकृत। दस्तावेज़ डाउनलोड और बीमाकर्ता के पास प्रस्तुत करने के लिए अनलॉक हो चुका है।"
-      : "Approved. Document unlocked for download and submission to your insurer.",
-    gatekeeperBodyPending: lang === "hi"
-      ? "कृपया नीचे दिए गए प्रत्येक क्लॉज की समीक्षा करें। आवश्यक होने पर किसी भी तथ्य को संपादित करें। बीमाकर्ता को अंतिम प्रस्तुति का एकमात्र अधिकार आपके पास सुरक्षित है।"
-      : "You must review every clause below. Edit any fact if required. You retain sole authority over final submission to the insurer.",
-    downloadSuccess: lang === "hi"
-      ? "अपील प्रारूप सफलतापूर्वक डाउनलोड हो गया। इसे 2018-2026 की नवीनीकरण रसीदों के साथ संलग्न करें और स्टार हेल्थ शिकायत निवारण अधिकारी (GRO) को भेजें।"
-      : "Appeal Brief downloaded successfully. You can attach this with your 2018-2026 renewal receipts and submit to Star Health Grievance Redressal Officer (GRO).",
-    sectionPrefix: lang === "hi" ? "अनुभाग" : "SECTION",
-    editBtn: lang === "hi" ? "संपादित करें" : "Edit Section",
-    saveBtn: lang === "hi" ? "सहेजें" : "Save",
-    confirmEdits: lang === "hi" ? "संशोधन की पुष्टि करें" : "Confirm Edits",
-    statutoryTitle: lang === "hi" ? "IRDAI सांविधिक सूचना:" : "IRDAI Statutory Notice:",
-    statutoryBody: lang === "hi"
-      ? "ClaimSaathi IRDAI 2024 मास्टर परिपत्र पर आधारित ग्राहक-पक्षीय शिकायत पत्र तैयार करता है। पॉलिसीधारक को तिथियों की पुष्टि करनी चाहिए और इसे सीधे बीमाकर्ता के शिकायत निवारण अधिकारी (GRO) को प्रस्तुत करना चाहिए। यदि 30 दिनों के भीतर समाधान न हो, तो बीमा लोकपाल नियम, 2017 के नियम 17 के तहत बीमा लोकपाल के पास शिकायत दर्ज करें।"
-      : "ClaimSaathi generates customer-side grievance briefs grounded in the IRDAI 2024 Master Circular. Policyholders must verify dates and submit directly to the Insurer Grievance Redressal Officer (GRO). If unaddressed within 30 days, file with the Insurance Ombudsman under Rule 17 of the Insurance Ombudsman Rules, 2017.",
-    rejectionDecoderLink: lang === "hi" ? "अस्वीकृति डिकोडर" : "Rejection Decoder",
+    backToRejection: translate("appeal.backToRejection", "Back to Rejection Decoder"),
+    claim: translate("appeal.claim", "Claim"),
+    approvedBadge: translate("appeal.approvedBadge", "APPROVED FOR SUBMISSION"),
+    pendingBadge: translate("appeal.pendingBadge", "REVIEW PENDING"),
+    title: translate("appeal.title", "Appeal Draft Builder"),
+    subtitle: translate("appeal.subtitle", "Formal First-Level Grievance brief grounded in IRDAI Master Circular 2024 Chapter V (60-Month Moratorium)"),
+    editMode: translate("appeal.editMode", "Edit Mode"),
+    previewDoc: translate("appeal.previewMode", "Preview Document"),
+    recordingApproval: translate("appeal.recordingApproval", "Recording Approval..."),
+    approveForExport: translate("appeal.approveForExport", "Approve for Export"),
+    downloadBtn: translate("appeal.downloadBtn", "Download Appeal Brief (.TXT/PDF)"),
+    gatekeeperTitleApproved: translate("appeal.gatekeeperTitleApproved", "✓ Policyholder Approval Verified & Audited."),
+    gatekeeperTitlePending: translate("appeal.gatekeeperTitlePending", "Gatekeeper Verification Protocol:"),
+    gatekeeperBodyApproved: translate("appeal.gatekeeperBodyApproved", "Approved. Document unlocked for download and submission to your insurer."),
+    gatekeeperBodyPending: translate("appeal.gatekeeperBodyPending", "You must review every clause below. Edit any fact if required. You retain sole authority over final submission to the insurer."),
+    downloadSuccess: translate("appeal.downloadSuccess", "Appeal Brief downloaded successfully. You can attach this with your 2018-2026 renewal receipts and submit to Star Health Grievance Redressal Officer (GRO)."),
+    sectionPrefix: translate("appeal.sectionPrefix", "SECTION"),
+    editBtn: translate("appeal.editBtn", "Edit Section"),
+    saveBtn: translate("appeal.saveBtn", "Save"),
+    confirmEdits: translate("appeal.confirmEdits", "Confirm Edits"),
+    statutoryTitle: translate("appeal.statutoryTitle", "IRDAI Statutory Notice:"),
+    statutoryBody: translate("appeal.statutoryBody", "ClaimSaathi generates customer-side grievance briefs grounded in the IRDAI 2024 Master Circular. Policyholders must verify dates and submit directly to the Insurer Grievance Redressal Officer (GRO). If unaddressed within 30 days, file with the Insurance Ombudsman under Rule 17 of the Insurance Ombudsman Rules, 2017."),
+    rejectionDecoderLink: translate("appeal.rejectionDecoderLink", "Rejection Decoder"),
   };
 
   return (
@@ -234,10 +224,10 @@ export default function AppealBuilderPage() {
           {/* Six-Section Appeal Letter */}
           {draft?.content_json && (
             <div className="divide-grid-y">
-              {SECTION_ORDER.map(({ key, labelEn, labelHi, prefix }) => {
+              {SECTION_ORDER.map(({ key, labelKey, prefix }) => {
                 const section = draft.content_json![key];
                 const isEditing = activeEdit === key && !previewMode && !isApproved;
-                const sectionTitle = lang === "hi" ? labelHi : (section?.title || labelEn);
+                const sectionTitle = translate(labelKey, section?.title || key);
 
                 return (
                   <div key={key} className="mistral-cell" id={`section-${key}`}>

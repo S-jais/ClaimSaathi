@@ -67,7 +67,7 @@ def fuzzy_name_match(name1: str | None, name2: str | None, threshold: float = 0.
     if not n1 or not n2:
         return True
 
-    # Exact token containment (e.g. "Ramesh" in "Ramesh Kumar Sharma")
+    # Exact token containment (e.g. "Siddhartha" in "Siddhartha Jaiswal")
     tokens1 = set(n1.split())
     tokens2 = set(n2.split())
     if tokens1.issubset(tokens2) or tokens2.issubset(tokens1):

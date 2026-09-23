@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import { documents } from "@/lib/api";
 import { PixelAlert, PixelCheck, PixelArrowRight } from "@/components/PixelIcons";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface DocumentUploadModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function DocumentUploadModal({
   defaultDocType = "hospital_bill",
   onSuccess,
 }: DocumentUploadModalProps) {
+  const { t } = useLanguage();
   const [selectedDocType, setSelectedDocType] = useState<string>(defaultDocType);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -196,10 +198,10 @@ Miscellaneous Admin Kit,2500.00`;
         >
           <div>
             <span className="text-eyebrow" style={{ color: "var(--mistral-flame)" }}>
-              Document Intelligence Engine
+              {t("modals.uploadEngineTag", "Document Intelligence Engine")}
             </span>
             <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0.25rem 0 0 0" }}>
-              Upload & Audit Document
+              {t("modals.uploadTitle", "Upload & Audit Document")}
             </h3>
           </div>
           <button
@@ -223,10 +225,9 @@ Miscellaneous Admin Kit,2500.00`;
         </div>
 
         <div style={{ padding: "1.5rem" }}>
-          {/* Document Type Selector */}
           <div style={{ marginBottom: "1.25rem" }}>
             <label className="text-eyebrow" style={{ display: "block", marginBottom: "0.4rem" }}>
-              Document Classification
+              {t("modals.docTypeLabel", "Document Classification")}
             </label>
             <select
               value={selectedDocType}
@@ -245,7 +246,7 @@ Miscellaneous Admin Kit,2500.00`;
             >
               {DOC_TYPES.map((dt) => (
                 <option key={dt.value} value={dt.value}>
-                  {dt.label}
+                  {t(`modals.docTypes.${dt.value}`, dt.label)}
                 </option>
               ))}
             </select>
@@ -300,17 +301,17 @@ Miscellaneous Admin Kit,2500.00`;
             ) : (
               <div>
                 <p style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.25rem" }}>
-                  Drop your file here or browse
+                  {t("modals.chooseFile", "Drop your file here or browse")}
                 </p>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>
-                  Supports PDF, CSV (hospital itemized bills), TXT, and scanned PNG/JPG
+                  {t("modals.supportedFormats", "Supports PDF, CSV (hospital itemized bills), TXT, and scanned PNG/JPG")}
                 </p>
                 <button
                   type="button"
                   className="btn-mistral-outline"
                   style={{ fontSize: "0.8rem", padding: "0.35rem 0.75rem" }}
                 >
-                  Browse Computer
+                  {t("modals.browseComputer", "Browse Computer")}
                 </button>
               </div>
             )}
@@ -332,10 +333,10 @@ Miscellaneous Admin Kit,2500.00`;
                 padding: 0,
               }}
             >
-              ⚡ Try with sample Apollo hospital bill (1-Click)
+              {t("modals.trySample", "⚡ Try with sample Apollo hospital bill (1-Click)")}
             </button>
             <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
-              Max size: 25MB
+              {t("modals.maxSize", "Max size: 25MB")}
             </span>
           </div>
 
@@ -394,7 +395,7 @@ Miscellaneous Admin Kit,2500.00`;
             className="btn-mistral-outline"
             style={{ padding: "0.5rem 1rem" }}
           >
-            Cancel
+            {t("common.cancel", "Cancel")}
           </button>
           <button
             type="button"
@@ -409,7 +410,7 @@ Miscellaneous Admin Kit,2500.00`;
               opacity: !file || uploading ? 0.6 : 1,
             }}
           >
-            {uploading ? "Analyzing..." : "Analyze Document"}
+            {uploading ? t("modals.uploading", "Analyzing...") : t("modals.uploadBtn", "Analyze Document")}
             <PixelArrowRight size={14} />
           </button>
         </div>

@@ -8,6 +8,7 @@ import {
   PixelArrowRight,
   PixelSun,
   PixelMoon,
+  PixelSettings,
 } from "./PixelIcons";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -44,7 +45,7 @@ export function Navbar({ claimId, user, onLogout }: NavbarProps) {
   const pathname = usePathname();
   const mounted = useIsMounted();
   const isDark = useIsDark();
-  const { lang, toggleLang, t } = useLanguage();
+  const { t } = useLanguage();
 
   const toggleTheme = () => {
     const nextDark = !isDark;
@@ -99,10 +100,17 @@ export function Navbar({ claimId, user, onLogout }: NavbarProps) {
             >
               {t("nav.appeal", "Appeal Builder")}
             </Link>
+
+            <Link
+              href="/settings"
+              className={`mistral-nav-item ${pathname === "/settings" ? "active" : ""}`}
+            >
+              {t("nav.settings", "Settings")}
+            </Link>
           </nav>
         </div>
 
-        {/* Right section: User info, Language toggle, Theme toggle & CTA */}
+        {/* Right section: User info, Settings button, Theme toggle & CTA */}
         <div className="mistral-nav-right">
           {user && (
             <div className="mistral-nav-user">
@@ -112,16 +120,15 @@ export function Navbar({ claimId, user, onLogout }: NavbarProps) {
             </div>
           )}
 
-          {/* Language Selector Toggle */}
-          <button
-            onClick={toggleLang}
-            className="btn-nav-lang"
-            title={lang === "en" ? "हिन्दी में बदलें" : "Switch to English"}
-            aria-label="Toggle language"
+          {/* Settings Icon Link */}
+          <Link
+            href="/settings"
+            className={`btn-nav-icon ${pathname === "/settings" ? "active" : ""}`}
+            title={t("nav.settings", "Settings")}
+            aria-label="Settings"
           >
-            <span>🌐</span>
-            <span>{lang === "en" ? "हिन्दी" : "EN"}</span>
-          </button>
+            <PixelSettings size={18} />
+          </Link>
 
           {/* Theme Toggle Button */}
           {mounted && (

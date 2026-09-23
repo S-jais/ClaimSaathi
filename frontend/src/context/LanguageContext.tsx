@@ -3,28 +3,68 @@
 import React, { createContext, useContext, useSyncExternalStore } from "react";
 import enDictionary from "../locales/en.json";
 import hiDictionary from "../locales/hi.json";
+import hinglishDictionary from "../locales/hinglish.json";
 import { INSURANCE_GLOSSARY, GlossaryTerm } from "../locales/glossary";
 
-export type SupportedLanguage = "en" | "hi";
+export type SupportedLanguage = "en" | "hi" | "hinglish";
+
+export interface LanguageOption {
+  code: SupportedLanguage;
+  label: string;
+  nativeName: string;
+  flag: string;
+  desc: string;
+}
+
+export const AVAILABLE_LANGUAGES: LanguageOption[] = [
+  {
+    code: "en",
+    label: "English",
+    nativeName: "English",
+    flag: "🇬🇧",
+    desc: "Standard professional English",
+  },
+  {
+    code: "hi",
+    label: "Hindi",
+    nativeName: "हिन्दी",
+    flag: "🇮🇳",
+    desc: "शुद्ध एवं प्रामाणिक देवनागरी हिन्दी",
+  },
+  {
+    code: "hinglish",
+    label: "Hinglish",
+    nativeName: "Hinglish",
+    flag: "🔤",
+    desc: "Conversational Hindi in Roman script",
+  },
+];
 
 interface LanguageContextType {
   lang: SupportedLanguage;
   setLang: (lang: SupportedLanguage) => void;
   toggleLang: () => void;
-  t: (path: string, fallback?: string) => string;
+  t: (path: string, fallback?: string, params?: Record<string, string | number>) => string;
   getGlossaryTerm: (key: string) => GlossaryTerm | undefined;
   glossary: Record<string, GlossaryTerm>;
+  availableLanguages: LanguageOption[];
 }
 
 const dictionaries: Record<SupportedLanguage, Record<string, unknown>> = {
   en: enDictionary as unknown as Record<string, unknown>,
   hi: hiDictionary as unknown as Record<string, unknown>,
+  hinglish: hinglishDictionary as unknown as Record<string, unknown>,
 };
 
 function getLangSnapshot(): SupportedLanguage {
   if (typeof window === "undefined") return "en";
-  const saved = localStorage.getItem("claimsaathi_lang");
-  return saved === "hi" ? "hi" : "en";
+  try {
+    const saved = localStorage.getItem("claimsaathi_lang");
+    if (saved === "hi" || saved === "hinglish" || saved === "en") {
+      return saved;
+    }
+  } catch {}
+  return "en";
 }
 
 function getLangServerSnapshot(): SupportedLanguage {
@@ -48,20 +88,24 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLang = (newLang: SupportedLanguage) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("claimsaathi_lang", newLang);
-      document.documentElement.lang = newLang;
-      window.dispatchEvent(new Event("claimsaathi_lang_change"));
+      try {
+        localStorage.setItem("claimsaathi_lang", newLang);
+        document.documentElement.lang = newLang === "hi" ? "hi" : "en";
+        window.dispatchEvent(new Event("claimsaathi_lang_change"));
+      } catch (err) {
+        console.warn("Failed to persist language:", err);
+      }
     }
   };
 
   const toggleLang = () => {
-    const next = lang === "en" ? "hi" : "en";
+    const next: SupportedLanguage = lang === "en" ? "hi" : lang === "hi" ? "hinglish" : "en";
     setLang(next);
   };
 
-  const t = (path: string, fallback?: string): string => {
+  const t = (path: string, fallback?: string, params?: Record<string, string | number>): string => {
     const keys = path.split(".");
-    let current: unknown = dictionaries[lang];
+    let current: unknown = dictionaries[lang] || dictionaries.en;
 
     for (const k of keys) {
       if (!current || typeof current !== "object") {
@@ -71,9 +115,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       current = (current as Record<string, unknown>)[k];
     }
 
-    if (typeof current === "string") return current;
+    let text: string | undefined = typeof current === "string" ? current : undefined;
 
-    if (lang !== "en") {
+    // Fall back to English dictionary if missing in target language
+    if (!text && lang !== "en") {
       let enFallback: unknown = dictionaries.en;
       for (const k of keys) {
         if (!enFallback || typeof enFallback !== "object") {
@@ -82,10 +127,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         }
         enFallback = (enFallback as Record<string, unknown>)[k];
       }
-      if (typeof enFallback === "string") return enFallback;
+      if (typeof enFallback === "string") {
+        text = enFallback;
+      }
     }
 
-    return fallback || path;
+    const output = text || fallback || path;
+
+    // Interpolate {paramName}
+    if (params) {
+      return output.replace(/\{(\w+)\}/g, (match, key) => {
+        return key in params ? String(params[key]) : match;
+      });
+    }
+
+    return output;
   };
 
   const getGlossaryTerm = (key: string) => {
@@ -101,6 +157,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         t,
         getGlossaryTerm,
         glossary: INSURANCE_GLOSSARY,
+        availableLanguages: AVAILABLE_LANGUAGES,
       }}
     >
       {children}

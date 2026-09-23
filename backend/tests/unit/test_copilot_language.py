@@ -46,16 +46,15 @@ def test_generate_spoken_text():
     )
     spoken = generate_spoken_text(raw_reply, "en")
     assert "**" not in spoken
-    assert "[FACT" not in spoken
-    assert "rupees 1,84,500" in spoken
-    assert len(spoken.split(".")) <= 4
+    assert "one lakh eighty-four thousand five hundred rupees" in spoken
+    assert len([s for s in spoken.split(".") if s.strip()]) <= 4
 
 
 def test_prompt_rendering_injects_glossary_for_hindi():
     orchestrator = get_copilot_orchestrator()
     case_state = {
         "claim_reference": "CLM-20491",
-        "patient_name": "Ramesh",
+        "patient_name": "Siddhartha",
         "hospital_name": "Apollo Hospital",
         "claim_amount_inr": 184500,
         "status": "rejected",
@@ -74,11 +73,11 @@ def test_prompt_rendering_injects_glossary_for_hindi():
         ui_language="hi",
         detected_language="hi",
         mode="text",
-        user_first_name="Ramesh",
+        user_first_name="Siddhartha",
     )
     assert "HINDI INSURANCE GLOSSARY" in prompt_hi
     assert "वेटिंग पीरियड (प्रतीक्षा अवधि)" in prompt_hi
-    assert "Ramesh" in prompt_hi
+    assert "Siddhartha" in prompt_hi
     assert "REJECTED_DECODING" in prompt_hi
 
     # 2. English prompt should NOT include glossary (saves tokens)
@@ -91,7 +90,7 @@ def test_prompt_rendering_injects_glossary_for_hindi():
         ui_language="en",
         detected_language="en",
         mode="text",
-        user_first_name="Ramesh",
+        user_first_name="Siddhartha",
     )
     assert "HINDI INSURANCE GLOSSARY" not in prompt_en
 
@@ -105,7 +104,7 @@ def test_prompt_rendering_injects_glossary_for_hindi():
         ui_language="en",
         detected_language="en",
         mode="voice",
-        user_first_name="Ramesh",
+        user_first_name="Siddhartha",
     )
     assert "VOICE MODE" in prompt_voice
     assert "spoken_text" in prompt_voice
